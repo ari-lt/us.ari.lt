@@ -13,14 +13,17 @@ def create_app() -> flask.Flask:
 
     app: flask.Flask = flask.Flask(__name__)
 
-    if not os.path.exists("key"):
-        with open("key", "wb") as fp:
+    if not os.path.exists("secret.key"):
+        with open("secret.key", "wb") as fp:
             fp.write(secrets.SystemRandom().randbytes(2**14))
 
-    with open("key", "rb") as fp:
+    with open("secret.key", "rb") as fp:
         app.config["SECRET_KEY"] = fp.read()
 
-    from .views import views
+    app.config["CAPTCHA_PEPPER_FILE"] = "captcha.key"
+
+    from .views import views, c
     app.register_blueprint(views, url_prefix="/")
+    c.init_app(app)
 
     return app

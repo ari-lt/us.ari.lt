@@ -4,7 +4,7 @@
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ari::web -&gt; Index</title>
+        <title>Ari::web -&gt; Sign in</title>
 
         <meta name="description" content="" />
         <meta
@@ -24,7 +24,47 @@
     </head>
 
     <body>
-        <h1>hi</h1>
+        <header>
+            <h1><a href="/">a.ari-web.xyz</a> accounts and services</h1>
+            <h2>ari-web provides privacy respecting, free and open source services and authentication</h2>
+        </header>
+
+        <main>
+            <form method="POST" action="/signin">
+                <fieldset>
+                    <legend>sign in</legend>
+
+                    <label for="username">username</label>
+                    <input type="text" maxlength="196" id="username" minlength="2" name="username" />
+
+                    <br />
+
+                    <label for="password">password</label>
+                    <input type="password" maxlength="6144" minlength="16" id="password" name="password" />
+
+                    <br />
+
+                    <label for="pin">pin</label>
+                    <input type="number" maxlength="6" minlength="6" id="pin" name="pin" />
+
+                    <br />
+
+                    <div class="captcha">
+                        {{ c.image() }}
+                        {{ c.audio() }}
+                    </div>
+
+                    <label for="code">CAPTCHA</label>
+                    <input type="text" maxlength="8" minlength="4" id="code" name="code" />
+
+                    <br />
+
+                    <button id="btn-signin" type="submit">sign in</button>
+                </fieldset>
+            </form>
+
+            <p>don't have an account ? <button href="#signup" id="btn-signup">sign up</button></p>
+        </main>
     </body>
 </html>
 

@@ -2,13 +2,17 @@
 # -*- coding: utf-8 -*-
 """views"""
 
-import flask
+from __future__ import annotations
 
-views: flask.Blueprint = flask.Blueprint("views", __name__)
+import flask
+import flask_ishuman
+
+from .routing import Bp
+
+views: Bp = Bp("views", __name__)
+c: flask_ishuman.IsHuman = flask_ishuman.IsHuman()
 
 
 @views.get("/")
-@views.get("/index.html")
 def index() -> str:
-    """index page"""
-    return flask.render_template("index.j2")
+    return flask.render_template("index.j2", c=c.new())
