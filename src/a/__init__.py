@@ -22,6 +22,9 @@ def create_app() -> flask.Flask:
 
     app.config["CAPTCHA_PEPPER_FILE"] = "captcha.key"
 
+    app.config["SESSION_COOKIE_SAMESITE"] = "None"
+    app.config["SESSION_COOKIE_SECURE"] = True
+
     from .views import views, c
     app.register_blueprint(views, url_prefix="/")
     c.init_app(app)
