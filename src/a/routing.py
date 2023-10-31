@@ -12,6 +12,6 @@ class Bp(Blueprint):
         """wrapper for GET"""
         return self.route(rule=rule, methods=("GET",), **kwargs)
 
-    def POST(self, rule: str, **kwargs: Any) -> Any:
+    def post(self, rule: str, **kwargs: Any) -> Any:
         """wrapper for POST"""
         return self.route(rule=rule, methods=("POST",), **kwargs)

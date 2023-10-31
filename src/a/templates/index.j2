@@ -30,22 +30,17 @@
         </header>
 
         <main>
-            <form method="POST" action="/signin">
+            <form method="POST" action="{{ url_for("auth.signup") }}">
                 <fieldset>
-                    <legend>sign in</legend>
+                    <legend>sign up</legend>
 
                     <label for="username">username</label>
-                    <input type="text" maxlength="196" id="username" minlength="2" name="username" />
+                    <input type="text" maxlength="256" id="username" minlength="2" name="username" />
 
                     <br />
 
                     <label for="password">password</label>
                     <input type="password" maxlength="6144" minlength="16" id="password" name="password" />
-
-                    <br />
-
-                    <label for="pin">pin</label>
-                    <input type="number" maxlength="6" minlength="6" id="pin" name="pin" />
 
                     <br />
 
@@ -59,11 +54,9 @@
 
                     <br />
 
-                    <button id="btn-signin" type="submit">sign in</button>
+                    <button id="btn-signin" type="submit">sign up</button>
                 </fieldset>
             </form>
-
-            <p>don't have an account ? <button href="#signup" id="btn-signup">sign up</button></p>
         </main>
     </body>
 </html>

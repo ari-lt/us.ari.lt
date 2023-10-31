@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 """views"""
 
-from __future__ import annotations
-
 import flask
-import flask_ishuman
 
+from .c import c
 from .routing import Bp
 
 views: Bp = Bp("views", __name__)
-c: flask_ishuman.IsHuman = flask_ishuman.IsHuman()
 
 
 @views.get("/")

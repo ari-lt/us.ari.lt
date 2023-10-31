@@ -21,12 +21,18 @@ def create_app() -> flask.Flask:
         app.config["SECRET_KEY"] = fp.read()
 
     app.config["CAPTCHA_PEPPER_FILE"] = "captcha.key"
+    app.config["CAPTCHA_EXPIRY"] = 60 * 10  # 10 minutes
 
     app.config["SESSION_COOKIE_SAMESITE"] = "None"
     app.config["SESSION_COOKIE_SECURE"] = True
 
-    from .views import views, c
-    app.register_blueprint(views, url_prefix="/")
+    from .c import c
     c.init_app(app)
+
+    from .views import views
+    app.register_blueprint(views, url_prefix="/")
+
+    from .auth import auth
+    app.register_blueprint(auth, url_prefix="/auth")
 
     return app
