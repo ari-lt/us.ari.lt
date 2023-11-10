@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>Ari::web -&gt; Accounts -&gt; {% block title %}index{% endblock %}</title>
+
+        <meta name="description" content="{% block description %}no description{% endblock %}" />
+        <meta
+            name="keywords"
+            content="ari-web, login, authentication, services, free"
+        />
+        <meta
+            name="robots"
+            content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large"
+        />
+        <meta property="og:type" content="website" />
+
+        <meta name="color-scheme" content="dark" />
+        <meta name="theme-color" content="#121212" />
+
+        <link rel="manifest" href="/manifest.json" />
+
+        {% block head %}{% endblock %}
+    </head>
+
+    <body>
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+            <h1 class="flashed-title">messages from the server</h1>
+            <ul class="flashed">
+            {% for category, message in messages %}
+                <li data-category="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+        {% endwith %}
+        {% block body %}<h1>hello world</h1>{% endblock %}
+    </body>
+</html>
+

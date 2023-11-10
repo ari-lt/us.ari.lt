@@ -1,2 +1,6 @@
 flask
 flask-ishuman
+flask-login
+flask-sqlalchemy
+web-mini
+werkzeug

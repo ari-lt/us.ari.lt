@@ -1,0 +1,7 @@
+{%if c is none%}<script>
+{%set r=range(11,99)|random%}
+_{{r}}=document.getElementById("captcha");fetch("{{url_for("auth.captcha")}}").then(r=>r.json()).then(j=>j.forEach(h=>_{{r}}.innerHTML+=h+" ")).catch(e=>{alert(e);console.error(e);location.search="?nojs"})
+</script>
+<noscript>
+<p>CAPTCHA requires javascript, check <a href="?nojs">?nojs</a> for the no-javascript version</p>
+<meta http-equiv="refresh" content="0;url=?nojs" /></noscript>{%endif%}

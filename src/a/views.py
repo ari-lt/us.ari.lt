@@ -2,14 +2,19 @@
 # -*- coding: utf-8 -*-
 """views"""
 
-import flask
+from typing import Union
 
-from .c import c
+import flask
+from flask_login import login_required  # type: ignore
+from werkzeug.wrappers import Response
+
 from .routing import Bp
 
 views: Bp = Bp("views", __name__)
 
 
 @views.get("/")
-def index() -> str:
-    return flask.render_template("index.j2", c=c.new())
+@login_required
+def index() -> Union[str, Response]:
+    """index"""
+    return flask.render_template("index.j2")

@@ -1,0 +1,39 @@
+{% extends "base.j2" %}
+
+{% block title %}signin{% endblock %}
+
+{% block description %}sign into ari-web accounts and services{% endblock %}
+
+{% block body %}
+<h1>sign up</h1>
+<form method="POST">
+    <fieldset>
+        <legend>sign up</legend>
+
+        <label for="username">username</label>
+        <input type="text" maxlength="{{ username_len }}" id="username" minlength="1" name="username" />
+
+        <br />
+
+        <label for="password">password</label>
+        <input type="password" maxlength="{{ pw_len }}" minlength="1" id="password" name="password" />
+
+        <br />
+
+        <div id=captcha class="captcha">
+            {% if c is not none %}
+            {{ c.image() }} {{ c.audio() }}
+            {% endif %}
+        </div>
+
+        <label for="code">CAPTCHA</label>
+        <input type="text" id="code" name="code" />
+
+        <br />
+
+        <button type="submit">sign up</button>
+    </fieldset>
+</form>
+<p>already have an account ? <a href="{{ url_for("auth.signin") }}">sign in</a></p>
+{% include "captcha.j2" %}
+{% endblock %}

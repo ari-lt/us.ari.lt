@@ -1,63 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Ari::web -&gt; Sign in</title>
+{% extends "base.j2" %}
 
-        <meta name="description" content="" />
-        <meta
-            name="keywords"
-            content=""
-        />
-        <meta
-            name="robots"
-            content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large"
-        />
-        <meta property="og:type" content="website" />
+{% block description %}ari-web accounts and services{% endblock %}
 
-        <meta name="color-scheme" content="dark" />
-        <meta name="theme-color" content="black" />
+{% block body %}
+<h1><a href="/">ari-web</a> accounts and services</h1>
 
-        <link rel="manifest" href="/manifest.json" />
-    </head>
-
-    <body>
-        <header>
-            <h1><a href="/">a.ari-web.xyz</a> accounts and services</h1>
-            <h2>ari-web provides privacy respecting, free and open source services and authentication</h2>
-        </header>
-
-        <main>
-            <form method="POST" action="{{ url_for("auth.signup") }}">
-                <fieldset>
-                    <legend>sign up</legend>
-
-                    <label for="username">username</label>
-                    <input type="text" maxlength="256" id="username" minlength="2" name="username" />
-
-                    <br />
-
-                    <label for="password">password</label>
-                    <input type="password" maxlength="6144" minlength="16" id="password" name="password" />
-
-                    <br />
-
-                    <div class="captcha">
-                        {{ c.image() }}
-                        {{ c.audio() }}
-                    </div>
-
-                    <label for="code">CAPTCHA</label>
-                    <input type="text" maxlength="8" minlength="4" id="code" name="code" />
-
-                    <br />
-
-                    <button id="btn-signin" type="submit">sign up</button>
-                </fieldset>
-            </form>
-        </main>
-    </body>
-</html>
-
+<a href="{{ url_for("auth.signup") }}">sign up</a>
+<a href="{{ url_for("auth.signin") }}">sign in</a>
+<a href="{{ url_for("auth.signout") }}">sign out</a>
+{% endblock %}
