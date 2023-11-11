@@ -1,0 +1,138 @@
+:root {
+    color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+    font-family: sans-serif;
+
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+
+    word-wrap: break-word;
+
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: auto;
+    padding: 2rem;
+    max-width: 1100px;
+    min-height: 100vh;
+    line-height: 1.4;
+    text-rendering: optimizeSpeed;
+}
+
+*[data-category]::before {
+    content: "[" attr(data-category) "] ";
+}
+
+*[data-category="debug"] {
+    color: #87afaf;
+}
+
+*[data-category="info"] {
+    color: #849155;
+}
+
+*[data-category="warning"] {
+    color: #c5c563;
+}
+
+*[data-category="error"] {
+    color: #bb6868;
+}
+
+*[data-category="critical"] {
+    color: #c987a0;
+}
+
+*[data-category="message"] {
+    color: #ddd0c0;
+}
+
+a {
+    color: #d3b362;
+}
+
+form {
+    width: -webkit-max-content;
+    width: -moz-max-content;
+    width: max-content;
+    text-align: center;
+}
+
+input,
+button {
+    background-color: #181818;
+    border: none;
+    padding: 0.3em;
+}
+
+fieldset {
+    border-radius: 5px;
+}
+
+button[type="submit"] {
+    width: 50%;
+}
+
+button:hover,
+button:focus {
+    -webkit-filter: brightness(133%);
+    filter: brightness(133%);
+    cursor: pointer;
+}
+
+.captcha {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    background-color: #181818;
+    gap: 1em;
+    padding: 1em;
+    width: 100%;
+}
+
+.captcha * {
+    width: 100%;
+}
+
+fieldset > * {
+    margin: 0.2em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        -webkit-animation-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+
+        -webkit-animation-iteration-count: 1 !important;
+        animation-iteration-count: 1 !important;
+
+        -webkit-transition-duration: 0.01ms !important;
+        -o-transition-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+
+        scroll-behavior: auto !important;
+    }
+}
+
+@media only screen and (max-width: 600px) {
+    fieldset, fieldset > * {
+        width: 80vw;
+    }
+}

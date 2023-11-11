@@ -4,6 +4,7 @@
 
 import os
 import secrets
+from functools import lru_cache
 from typing import Optional
 
 import flask
@@ -11,6 +12,12 @@ import web_mini
 from flask_login import LoginManager  # type: ignore
 
 from .const import USERNAME_LEN
+
+
+@lru_cache
+def min_css(css: str) -> str:
+    """minify css"""
+    return web_mini.css.minify_css(css)
 
 
 def create_app() -> flask.Flask:
@@ -56,6 +63,7 @@ def create_app() -> flask.Flask:
     lm.refresh_view = "auth.signin"  # type: ignore
     lm.session_protection = "strong"  # type: ignore
     lm.login_message = "please sign in"  # type: ignore
+    lm.needs_refresh_message = "your login expired, please sign in again"  # type: ignore
 
     @lm.user_loader  # type: ignore
     def _(username: str) -> Optional[User]:
@@ -68,12 +76,24 @@ def create_app() -> flask.Flask:
     def _(response: flask.Response) -> flask.Response:
         """minify resources"""
 
-        if response.content_type == "text/html; charset=utf-8":
-            response.set_data(web_mini.html.minify_html(response.get_data(as_text=True)))
-        elif response.content_type == "text/css; charset=utf-8":
-            response.set_data(web_mini.css.minify_css(response.get_data(as_text=True)))
+        if response.direct_passthrough:
+            return response
 
-        return response
+        response_data: str = response.get_data(as_text=True)
+
+        if response.content_type == "text/html; charset=utf-8":
+            minified_data: str = web_mini.html.minify_html(response_data)
+        elif response.content_type == "text/css; charset=utf-8":
+            minified_data: str = min_css(response_data)
+        else:
+            return response
+
+        return app.response_class(
+            response=minified_data,
+            status=response.status,
+            headers=dict(response.headers),
+            mimetype=response.mimetype,
+        )
 
     from .c import c
 

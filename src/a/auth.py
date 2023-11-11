@@ -3,17 +3,34 @@
 """authentication"""
 
 import typing as t
+from functools import wraps
 
 import flask
 from flask_ishuman import CaptchaGenerator
-from flask_login import login_required, login_user, logout_user  # type: ignore
+from flask_login import login_required  # type: ignore
+from flask_login import current_user, login_user, logout_user  # type: ignore
 from werkzeug.wrappers import Response
 
 from . import const, models, util
+from .c import audio as gen_audio_captcha
 from .c import c
 from .routing import Bp
 
 auth: Bp = Bp("auth", __name__)
+
+
+def nologin(fn: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    """redirect back to / if logged in"""
+
+    @wraps(fn)
+    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        if current_user.is_authenticated:  # type: ignore
+            flask.flash("you are already signed in", "info")
+            return flask.redirect("/")
+
+        return fn(*args, **kwargs)
+
+    return wrapper
 
 
 @auth.get("/captcha")
@@ -25,7 +42,7 @@ def captcha() -> str:
     return flask.jsonify(  # type: ignore
         [
             new.image(),
-            new.audio(),
+            gen_audio_captcha(new),
         ]
     )
 
@@ -41,10 +58,12 @@ def auth_redirect() -> Response:
 def signout() -> Response:
     """sign the current user out"""
     logout_user()
+    flask.flash("you have been signed out", "info")
     return flask.redirect("/")
 
 
 @auth.get("/signup")
+@nologin
 def signup_page() -> str:
     """signup page"""
     return flask.render_template(
@@ -56,6 +75,7 @@ def signup_page() -> str:
 
 
 @auth.get("/signin")
+@nologin
 def signin_page() -> str:
     """signin page"""
     return flask.render_template(
@@ -68,6 +88,7 @@ def signin_page() -> str:
 
 
 @auth.post("/signup")
+@nologin
 def signup() -> t.Union[t.Tuple[str, int], Response]:
     """signup logic"""
 
@@ -75,7 +96,7 @@ def signup() -> t.Union[t.Tuple[str, int], Response]:
     password: t.Optional[str] = flask.request.form.get("password")
     code: t.Optional[str] = flask.request.form.get("code")
 
-    if not (username and password and code):
+    if not (username and password and code) or not util.validate_username(username):
         return util.flash_render("invalid request", "signup.j2"), 400
 
     if not c.verify(code):
@@ -93,10 +114,11 @@ def signup() -> t.Union[t.Tuple[str, int], Response]:
             500,
         )
 
-    return flask.redirect("/")
+    return flask.render_template("created.j2", pin=pin, username=username), 200
 
 
 @auth.post("/signin")
+@nologin
 def signin() -> t.Union[t.Tuple[str, int], Response]:
     """login logic"""
 

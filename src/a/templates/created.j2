@@ -1,0 +1,14 @@
+{% extends "base.j2" %}
+
+{% block title %}success{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for("static", filename="css/sign.css")}}" />{% endblock %}
+
+{% block description %}your ari-web account has been successfully created{% endblock %}
+
+{% block body %}
+<h1>congrats, {{ username | escape }}</h1>
+<p>your account has been created, make sure to save your PIN :</p>
+<h2 style="letter-spacing:0.3ch">{{ pin }}</h2>
+<p>after that, you can <a href="{{ url_for("auth.signin") }}">go and sign in</a></p>
+{% endblock %}

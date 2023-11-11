@@ -1,6 +1,8 @@
 {% extends "base.j2" %}
 
-{% block title %}signin{% endblock %}
+{% block title %}sign in{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for("static", filename="css/sign.css")}}" />{% endblock %}
 
 {% block description %}sign into ari-web accounts and services{% endblock %}
 
@@ -11,17 +13,17 @@
         <legend>sign in</legend>
 
         <label for="username">username</label>
-        <input type="text" maxlength="{{ username_len }}" id="username" minlength="1" name="username" />
+        <input required type="text" maxlength="{{ username_len }}" id="username" minlength="1" name="username" placeholder="username" />
 
         <br />
 
         <label for="password">password</label>
-        <input type="password" maxlength="{{ pw_len }}" minlength="1" id="password" name="password" />
+        <input required type="password" maxlength="{{ pw_len }}" minlength="1" id="password" name="password" placeholder="password" />
 
         <br />
 
-        <label for="pin">pin</label>
-        <input type="number" maxlength="{{ pin_len }}" minlength="1" id="pin" name="pin" />
+        <label for="pin">PIN</label>
+        <input required type="number" maxlength="{{ pin_len }}" minlength="1" id="pin" name="pin" placeholder="PIN" />
 
         <br />
 
@@ -32,13 +34,13 @@
         </div>
 
         <label for="code">CAPTCHA</label>
-        <input type="text" id="code" name="code" />
+        <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
 
         <br />
 
         <button type="submit">sign in</button>
     </fieldset>
+    <p>don't have an account ? <a href="{{ url_for("auth.signup") }}{{ "" if c is none else "?nojs" }}">sign up</a></p>
 </form>
-<p>don't have an account ? <a href="{{ url_for("auth.signup") }}">sign up</a></p>
 {% include "captcha.j2" %}
 {% endblock %}

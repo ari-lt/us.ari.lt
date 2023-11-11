@@ -5,7 +5,7 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <title>Ari::web -&gt; Accounts -&gt; {% block title %}index{% endblock %}</title>
+        <title>Ari::web -&gt; Accounts -&gt; {% block title %}unlabled{% endblock %}</title>
 
         <meta name="description" content="{% block description %}no description{% endblock %}" />
         <meta
@@ -20,8 +20,29 @@
 
         <meta name="color-scheme" content="dark" />
         <meta name="theme-color" content="#121212" />
+        <style>*{background-color:#121212;color:whitesmoke}</style>
 
         <link rel="manifest" href="/manifest.json" />
+
+        {% set styles = url_for("static", filename="css/base.css") %}
+
+        <link
+            href="{{ styles }}"
+            rel="preload"
+            referrerpolicy="no-referrer"
+            type="text/css"
+            as="style"
+            onload="this.onload=null;this.rel='stylesheet'"
+        />
+
+        <noscript>
+        <link
+            href="{{ styles }}"
+            rel="stylesheet"
+            referrerpolicy="no-referrer"
+            type="text/css"
+        />
+        </noscript>
 
         {% block head %}{% endblock %}
     </head>
@@ -29,12 +50,12 @@
     <body>
         {% with messages = get_flashed_messages(with_categories=True) %}
             {% if messages %}
-            <h1 class="flashed-title">messages from the server</h1>
-            <ul class="flashed">
+            <details open>
+            <summary>messages from the server</summary>
             {% for category, message in messages %}
-                <li data-category="{{ category }}">{{ message }}</li>
+                <div data-category="{{ category }}">{{ message }}</div>
             {% endfor %}
-            </ul>
+            </details>
             {% endif %}
         {% endwith %}
         {% block body %}<h1>hello world</h1>{% endblock %}
