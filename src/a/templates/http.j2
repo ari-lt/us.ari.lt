@@ -1,0 +1,9 @@
+{% extends "base.j2" %}
+
+{% block title %}{{ code }}{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for("static", filename="css/sign.css")}}" />{% endblock %}
+
+{% block description %}{{ code }} / {{ summary }}{% endblock %}
+
+{% block body %}<h1>{{ code }} / {{ summary }}</h1> <p>{{ description }}</p>{% endblock %}

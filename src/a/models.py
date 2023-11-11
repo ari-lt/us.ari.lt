@@ -2,20 +2,26 @@
 # -*- coding: utf-8 -*-
 """models"""
 
+import os
+import typing as t
 from base64 import b85encode, urlsafe_b64encode
 from secrets import SystemRandom
 from string import digits
-from typing import Optional
 
 from flask_argon2 import Argon2  # type: ignore
 from flask_login import UserMixin  # type: ignore
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Enum, Unicode
 from sqlalchemy.orm import Relationship, relationship
 
-from . import const
+from . import const, util
 
-db: SQLAlchemy = SQLAlchemy()
-argon2: Argon2 = Argon2()
+db: SQLAlchemy = SQLAlchemy(engine_options={"encoding": "utf-8"})
+argon2: Argon2 = Argon2(
+    salt_len=32,
+    time_cost=8,
+    parallelism=(os.cpu_count() or 4),
+)
 rand: SystemRandom = SystemRandom()
 
 
@@ -42,20 +48,43 @@ def hash_verify(data: str, h: str) -> bool:
 class App(db.Model):
     """user app"""
 
-    __tablename__: str = "app"
-
     id: str = db.Column(db.String, primary_key=True, nullable=False, unique=True)
-    name: str = db.Column(db.String(const.APP_NAME_LEN), nullable=False)
-    secret: str = db.Column(db.String, nullable=False)
+    name: str = db.Column(Unicode(const.APP_NAME_LEN), nullable=False)
+    public: bool = db.Column(db.Boolean)
+    secret_hash: t.Optional[str] = db.Column(db.String)
     username: str = db.Column(
-        db.String(const.USERNAME_LEN), db.ForeignKey("user.username"), nullable=False
+        Unicode(const.USERNAME_LEN), db.ForeignKey("user.username"), nullable=False
     )
 
-    def __init__(self, name: str, username: str) -> None:
+    def __init__(
+        self,
+        name: str,
+        username: str,
+        public: bool = False,
+        secret: t.Optional[str] = None,
+    ) -> None:
         self.id: str = self.gen_id()
         self.name: str = name
-        self.secret: str = gen_secret()
+        self.public: bool = public
+
+        if secret is None:
+            self.secret_hash: t.Optional[str] = None
+        else:
+            self.set_secret(secret)
+
         self.username: str = username
+
+    def verify_secret(self, secret: str) -> bool:
+        """is secret valid"""
+        return self.secret_hash is not None and hash_verify(secret, self.secret_hash)
+
+    def set_secret(self, secret: t.Optional[str] = None) -> None:
+        """set secret"""
+        self.secret_hash: t.Optional[str] = (
+            None
+            if self.public
+            else hash_data(gen_secret() if secret is None else secret)
+        )
 
     def gen_id(self) -> str:
         """generate an app id"""
@@ -72,11 +101,18 @@ class App(db.Model):
                 db.session.rollback()
                 continue
 
+    def json(self) -> t.Dict[str, t.Any]:
+        """return app as json"""
+
+        return {
+            "id": self.id,
+            "name": self.name,
+            "public": self.public,
+        }
+
 
 class User(UserMixin, db.Model):
     """user"""
-
-    __tablename__: str = "user"
 
     username: str = db.Column(
         db.String(const.USERNAME_LEN),
@@ -84,24 +120,46 @@ class User(UserMixin, db.Model):
         unique=True,
         nullable=False,
     )
-    bio: Optional[str] = db.Column(db.String(const.BIO_LEN))
+    bio: str = db.Column(Unicode(const.BIO_LEN), nullable=False)
     password_hash: str = db.Column(db.String, nullable=False)
     pin_hash: str = db.Column(db.String, nullable=False)
-    admin: bool = db.Column(db.Boolean)
+    role: const.Role = db.Column(Enum(const.Role))
+    limited: bool = db.Column(db.Boolean)
     apps: Relationship[App] = relationship("App", backref="user")
 
     def __init__(self, username: str, password: str, pin: str) -> None:
-        assert username, "no username supplied"
-        assert password, "no password supplied"
-        assert pin, "no pin supplied"
-
-        assert len(username) <= const.USERNAME_LEN, "username is too long"
-        assert len(password) <= const.MAX_PW_LEN, "password is too long"
+        assert self.check_pin(pin), "invalid PIN"
+        assert self.check_username(username), "invalid username"
+        assert self.check_password(password), "invalid password"
 
         self.username: str = username
-        self.password_hash: str = hash_data(password)
+        self.bio: str = ""
+        self.set_password(password)
         self.pin_hash: str = hash_data(pin)
-        self.admin: bool = False
+        self.role: const.Role = const.Role.user
+
+    def set_password(self, password: str) -> None:
+        """set password"""
+        self.password_hash: str = hash_data(password)
+
+    @staticmethod
+    def check_username(username: str) -> bool:
+        """checks if username is valid"""
+        return (
+            bool(username)
+            and len(username) <= const.USERNAME_LEN
+            and util.validate_username(username)
+        )
+
+    @staticmethod
+    def check_password(password: str) -> bool:
+        """checks if username is valid"""
+        return bool(password) and len(password) <= const.MAX_PW_LEN
+
+    @staticmethod
+    def check_pin(pin: str) -> bool:
+        """checks if username is valid"""
+        return bool(pin) and len(pin) == const.PIN_LEN
 
     def verify_password(self, password: str) -> bool:
         """is password valid"""
@@ -112,10 +170,18 @@ class User(UserMixin, db.Model):
         return hash_verify(pin, self.pin_hash)
 
     @staticmethod
-    def get_by_user(username: str) -> "Optional[User]":
+    def get_by_user(username: str) -> "t.Optional[User]":
         """gets user by username"""
         return db.session.get(User, username)
 
     def get_id(self) -> str:
         """get id"""
         return self.username
+
+    def json(self) -> t.Dict[str, t.Any]:
+        """return user as json"""
+
+        return {
+            "bio": self.bio,
+            "role": self.role.value,
+        }

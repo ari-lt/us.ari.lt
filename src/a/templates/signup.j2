@@ -12,15 +12,15 @@
     <fieldset>
         <legend>sign up</legend>
 
-        <label for="username">username</label>
-        <input required type="text" maxlength="{{ username_len }}" id="username" minlength="1" name="username" placeholder="username ( only ._+- and alphanumeric )" />
+        <div class="form-group">
+            <label for="username">username</label>
+            <input required type="text" maxlength="{{ username_len }}" id="username" minlength="1" name="username" placeholder="username ( only ._+- and alphanumeric )" />
+        </div>
 
-        <br />
-
-        <label for="password">password</label>
-        <input required type="password" maxlength="{{ pw_len }}" minlength="1" id="password" name="password" placeholder="password" />
-
-        <br />
+        <div class="form-group">
+            <label for="password">password</label>
+            <input required type="password" maxlength="{{ pw_len }}" minlength="1" id="password" name="password" placeholder="password" />
+        </div>
 
         <div id=captcha class="captcha">
             {% if c is not none %}
@@ -28,10 +28,15 @@
             {% endif %}
         </div>
 
-        <label for="code">CAPTCHA</label>
-        <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
+        <div class="form-group">
+            <label for="code">CAPTCHA</label>
+            <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
+        </div>
 
-        <br />
+        <div class="form group">
+            <label for="terms">i agree to <a href="{{ url_for("views.tos") }}" target="_blank">the terms of service</a></label>
+            <input required type="checkbox" id="terms" name="terms" />
+        </div>
 
         <button type="submit">sign up</button>
     </fieldset>

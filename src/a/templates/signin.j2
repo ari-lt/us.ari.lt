@@ -12,20 +12,20 @@
     <fieldset>
         <legend>sign in</legend>
 
-        <label for="username">username</label>
-        <input required type="text" maxlength="{{ username_len }}" id="username" minlength="1" name="username" placeholder="username" />
+        <div class="form group">
+            <label for="username">username</label>
+            <input required type="text" maxlength="{{ username_len }}" id="username" minlength="1" name="username" placeholder="username" />
+        </div>
 
-        <br />
+        <div class="form group">
+            <label for="password">password</label>
+            <input required type="password" maxlength="{{ pw_len }}" minlength="1" id="password" name="password" placeholder="password" />
+        </div>
 
-        <label for="password">password</label>
-        <input required type="password" maxlength="{{ pw_len }}" minlength="1" id="password" name="password" placeholder="password" />
-
-        <br />
-
-        <label for="pin">PIN</label>
-        <input required type="number" maxlength="{{ pin_len }}" minlength="1" id="pin" name="pin" placeholder="PIN" />
-
-        <br />
+        <div class="form group">
+            <label for="pin">PIN</label>
+            <input inputmode="numeric" type="password" required maxlength="{{ pin_len }}" minlength="1" id="pin" name="pin" placeholder="PIN" />
+        </div>
 
         <div id=captcha class="captcha">
             {% if c is not none %}
@@ -33,10 +33,10 @@
             {% endif %}
         </div>
 
-        <label for="code">CAPTCHA</label>
-        <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
-
-        <br />
+        <div class="form group">
+            <label for="code">CAPTCHA</label>
+            <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
+        </div>
 
         <button type="submit">sign in</button>
     </fieldset>

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """utils"""
 
-from typing import Optional
+from typing import Optional, Any
 
 import flask
 
@@ -19,7 +19,11 @@ def jscaptcha() -> Optional[OggCaptchaGenerator]:
 
 
 def flash_render(
-    msg: str, template: str, captcha: bool = True, level: str = "error"
+    msg: str,
+    template: str,
+    captcha: bool = True,
+    level: str = "error",
+    **kwargs: Any,
 ) -> str:
     """flash and render"""
 
@@ -30,6 +34,7 @@ def flash_render(
         pw_len=const.MAX_PW_LEN,
         pin_len=const.PIN_LEN,
         username_len=const.USERNAME_LEN,
+        **kwargs,
     )
 
 

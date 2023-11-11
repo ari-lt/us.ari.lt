@@ -64,7 +64,8 @@ form {
 }
 
 input,
-button {
+button,
+textarea {
     background-color: #181818;
     border: none;
     padding: 0.3em;
@@ -72,10 +73,19 @@ button {
 
 fieldset {
     border-radius: 5px;
+    display: flex;
+    flex-direction: column;
 }
 
-button[type="submit"] {
-    width: 50%;
+.form-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5em;
+}
+
+.form-group > *:not(label) {
+    flex: 1;
 }
 
 button:hover,
@@ -113,6 +123,14 @@ fieldset > * {
     margin: 0.2em;
 }
 
+textarea {
+    min-height: 3em;
+    resize: vertical;
+    border: none;
+    margin: 0;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -132,7 +150,8 @@ fieldset > * {
 }
 
 @media only screen and (max-width: 600px) {
-    fieldset, fieldset > * {
+    fieldset,
+    fieldset > * {
         width: 80vw;
     }
 }

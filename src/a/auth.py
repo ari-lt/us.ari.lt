@@ -87,6 +87,21 @@ def signin_page() -> str:
     )
 
 
+@auth.get("/manage")
+@login_required
+def manage_page() -> str:
+    """manage current user"""
+
+    return flask.render_template(
+        "manage.j2",
+        user=current_user,
+        c=util.jscaptcha(),
+        username_len=const.USERNAME_LEN,
+        pw_len=const.MAX_PW_LEN,
+        bio_len=const.BIO_LEN,
+    )
+
+
 @auth.post("/signup")
 @nologin
 def signup() -> t.Union[t.Tuple[str, int], Response]:
@@ -95,6 +110,10 @@ def signup() -> t.Union[t.Tuple[str, int], Response]:
     username: t.Optional[str] = flask.request.form.get("username")
     password: t.Optional[str] = flask.request.form.get("password")
     code: t.Optional[str] = flask.request.form.get("code")
+    terms: t.Optional[bool] = flask.request.form.get("terms")
+
+    if not terms:
+        return util.flash_render("terms have not been accepted", "signup.j2"), 403
 
     if not (username and password and code) or not util.validate_username(username):
         return util.flash_render("invalid request", "signup.j2"), 400
@@ -137,9 +156,63 @@ def signin() -> t.Union[t.Tuple[str, int], Response]:
     if (user := models.User.get_by_user(username)) is None:
         return util.flash_render("no such user", "signin.j2"), 404
 
-    if not user.verify_password(password) or not user.verify_pin(pin):
-        return util.flash_render("invalid pin and / or password", "signin.j2"), 403
+    if not (user.verify_password(password) and user.verify_pin(pin)):
+        return util.flash_render("invalid pin and / or password", "signin.j2"), 401
 
     login_user(user, True)
 
     return flask.redirect("/")
+
+
+@auth.post("/manage")
+@login_required
+def manage() -> t.Tuple[str, int]:
+    """manage current user"""
+
+    old_password: t.Optional[str] = flask.request.form.get("password_old")
+    new_password: t.Optional[str] = flask.request.form.get("password")
+    pin: t.Optional[str] = flask.request.form.get("pin")
+    bio: t.Optional[str] = flask.request.form.get("bio")
+    code: t.Optional[str] = flask.request.form.get("code")
+
+    if not c.verify(code):
+        return util.flash_render("invalid CAPTCHA", "manage.j2", user=current_user), 403
+
+    if old_password and new_password and pin:
+        if not (
+            current_user.check_password(new_password)  # type: ignore
+            and current_user.verify_pin(pin)  # type: ignore
+            and current_user.verify_password(old_password)  # type: ignore
+        ):
+            return (
+                util.flash_render(
+                    "invalid password( s ) or PIN", "manage.j2", user=current_user
+                ),
+                401,
+            )
+
+        current_user.set_password(new_password)  # type: ignore
+
+    if bio is not None:
+        current_user.bio = bio  # type: ignore
+
+    try:
+        models.db.session.commit()
+    except Exception:
+        models.db.session.rollback()
+        return (
+            util.flash_render(
+                "invalid request / server error", "manage.j2", user=current_user
+            ),
+            500,
+        )
+
+    return (
+        util.flash_render(
+            "user updated",
+            "manage.j2",
+            level="info",
+            user=current_user,
+        ),
+        200,
+    )

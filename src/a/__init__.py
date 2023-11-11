@@ -5,11 +5,12 @@
 import os
 import secrets
 from functools import lru_cache
-from typing import Optional
+from typing import Optional, Tuple
 
 import flask
 import web_mini
 from flask_login import LoginManager  # type: ignore
+from werkzeug.exceptions import HTTPException
 
 from .const import USERNAME_LEN
 
@@ -95,6 +96,19 @@ def create_app() -> flask.Flask:
             mimetype=response.mimetype,
         )
 
+    @app.errorhandler(HTTPException)
+    def _(e: HTTPException) -> Tuple[str, int]:
+        """handle http errors"""
+        return (
+            flask.render_template(
+                "http.j2",
+                code=e.code,
+                summary=e.name.lower(),
+                description=(e.description or f"http error code {e.code}").lower(),
+            ),
+            e.code or 200,
+        )
+
     from .c import c
 
     c.init_app(app)
@@ -106,5 +120,9 @@ def create_app() -> flask.Flask:
     from .auth import auth
 
     app.register_blueprint(auth, url_prefix="/auth")
+
+    from .api import api
+
+    app.register_blueprint(api, url_prefix="/api")
 
     return app

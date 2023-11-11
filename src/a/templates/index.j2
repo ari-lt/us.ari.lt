@@ -9,5 +9,16 @@
 
 <a href="{{ url_for("auth.signup") }}">sign up</a>
 <a href="{{ url_for("auth.signin") }}">sign in</a>
+
+{% if signed_in %}
 <a href="{{ url_for("auth.signout") }}">sign out</a>
+<a href="{{ url_for("auth.manage") }}">manage user</a>
+{% endif %}
+
+<h2>users</h2>
+<ul>
+{% for user in users %}
+<li><a href="/@{{ user.username | urlencode }}">{{ user.username | escape }}</a></li>
+{% endfor %}
+</ul>
 {% endblock %}

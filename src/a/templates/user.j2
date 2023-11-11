@@ -1,0 +1,22 @@
+{% extends "base.j2" %}
+
+{% block title %}@{{ user.username | escape }}{% endblock %}
+
+{% block description %}user {{ user.username | escape }} on ari-web{% endblock %}
+
+{% block body %}
+<h1>user {{ user.username | escape }}</h1>
+
+{% if user.bio %}
+<pre class="bio">{{ user.bio | escape }}</pre>
+{% endif %}
+
+<p>role : {{ user.role.name }}</p>
+
+{% if apps %}
+<h2>apps</h2>
+{% for app in apps %}
+<li><a href="{{ app.id | urlencode }}">{{ app.name | escape }}</a></li>
+{% endfor %}
+{% endif %}
+{% endblock %}
