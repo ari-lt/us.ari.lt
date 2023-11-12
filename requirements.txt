@@ -2,6 +2,8 @@ flask
 flask-ishuman
 flask-login
 flask-sqlalchemy
+flask-argon2
 web-mini
 werkzeug
 pydub
+pymysql

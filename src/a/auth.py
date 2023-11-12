@@ -69,8 +69,6 @@ def signup_page() -> str:
     return flask.render_template(
         "signup.j2",
         c=util.jscaptcha(),
-        username_len=const.USERNAME_LEN,
-        pw_len=const.MAX_PW_LEN,
     )
 
 
@@ -81,9 +79,6 @@ def signin_page() -> str:
     return flask.render_template(
         "signin.j2",
         c=util.jscaptcha(),
-        username_len=const.USERNAME_LEN,
-        pw_len=const.MAX_PW_LEN,
-        pin_len=const.PIN_LEN,
     )
 
 
@@ -97,7 +92,6 @@ def manage_page() -> str:
         user=current_user,
         c=util.jscaptcha(),
         username_len=const.USERNAME_LEN,
-        pw_len=const.MAX_PW_LEN,
         bio_len=const.BIO_LEN,
     )
 

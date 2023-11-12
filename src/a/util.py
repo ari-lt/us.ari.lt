@@ -31,7 +31,6 @@ def flash_render(
     return flask.render_template(
         template,
         **({"c": jscaptcha()} if captcha else {}),
-        pw_len=const.MAX_PW_LEN,
         pin_len=const.PIN_LEN,
         username_len=const.USERNAME_LEN,
         **kwargs,

@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """models"""
 
-import os
 import typing as t
 from base64 import b85encode, urlsafe_b64encode
 from secrets import SystemRandom
@@ -16,12 +15,8 @@ from sqlalchemy.orm import Relationship, relationship
 
 from . import const, util
 
-db: SQLAlchemy = SQLAlchemy(engine_options={"encoding": "utf-8"})
-argon2: Argon2 = Argon2(
-    salt_len=32,
-    time_cost=8,
-    parallelism=(os.cpu_count() or 4),
-)
+db: SQLAlchemy = SQLAlchemy()
+argon2: Argon2 = Argon2()
 rand: SystemRandom = SystemRandom()
 
 
@@ -48,12 +43,19 @@ def hash_verify(data: str, h: str) -> bool:
 class App(db.Model):
     """user app"""
 
-    id: str = db.Column(db.String, primary_key=True, nullable=False, unique=True)
+    id: str = db.Column(
+        db.String(const.APP_ID_LEN),
+        primary_key=True,
+        nullable=False,
+        unique=True,
+    )
     name: str = db.Column(Unicode(const.APP_NAME_LEN), nullable=False)
     public: bool = db.Column(db.Boolean)
-    secret_hash: t.Optional[str] = db.Column(db.String)
+    secret_hash: t.Optional[str] = db.Column(db.String(const.HASH_LEN))
     username: str = db.Column(
-        Unicode(const.USERNAME_LEN), db.ForeignKey("user.username"), nullable=False
+        Unicode(const.USERNAME_LEN),
+        db.ForeignKey("user.username"),
+        nullable=False,
     )
 
     def __init__(
@@ -92,7 +94,7 @@ class App(db.Model):
         while True:
             generated_id: str = urlsafe_b64encode(
                 rand.randbytes(const.APP_ID_LEN)
-            ).decode("ascii")
+            ).decode("ascii")[: const.APP_ID_LEN]
 
             try:
                 if not self.query.filter_by(id=generated_id).first():
@@ -121,11 +123,15 @@ class User(UserMixin, db.Model):
         nullable=False,
     )
     bio: str = db.Column(Unicode(const.BIO_LEN), nullable=False)
-    password_hash: str = db.Column(db.String, nullable=False)
-    pin_hash: str = db.Column(db.String, nullable=False)
+    password_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
+    pin_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
     role: const.Role = db.Column(Enum(const.Role))
     limited: bool = db.Column(db.Boolean)
-    apps: Relationship[App] = relationship("App", backref="user")
+    apps: Relationship[App] = relationship(
+        "App",
+        backref="user",
+        lazy="dynamic",
+    )
 
     def __init__(self, username: str, password: str, pin: str) -> None:
         assert self.check_pin(pin), "invalid PIN"
@@ -154,7 +160,7 @@ class User(UserMixin, db.Model):
     @staticmethod
     def check_password(password: str) -> bool:
         """checks if username is valid"""
-        return bool(password) and len(password) <= const.MAX_PW_LEN
+        return bool(password)
 
     @staticmethod
     def check_pin(pin: str) -> bool:

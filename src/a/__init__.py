@@ -12,7 +12,7 @@ import web_mini
 from flask_login import LoginManager  # type: ignore
 from werkzeug.exceptions import HTTPException
 
-from .const import USERNAME_LEN
+from . import const
 
 
 @lru_cache
@@ -21,7 +21,7 @@ def min_css(css: str) -> str:
     return web_mini.css.minify_css(css)
 
 
-def create_app() -> flask.Flask:
+def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     """create a new flask app"""
 
     web_mini.compileall()
@@ -35,19 +35,31 @@ def create_app() -> flask.Flask:
     with open("secret.key", "rb") as fp:
         app.config["SECRET_KEY"] = fp.read()
 
+    app.config["PREFERRED_URL_SCHEME"] = "https"
+
     app.config["CAPTCHA_PEPPER_FILE"] = "captcha.key"
     app.config["CAPTCHA_EXPIRY"] = 60 * 10  # 10 minutes
 
-    app.config["SESSION_COOKIE_SAMESITE"] = "None"
+    app.config["SESSION_COOKIE_SAMESITE"] = "strict"
     app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
 
     app.config["REMEMBER_COOKIE_NAME"] = "authorization"
-    app.config["REMEMBER_COOKIE_SAMESITE"] = "None"
+    app.config["REMEMBER_COOKIE_SAMESITE"] = "strict"
     app.config["REMEMBER_COOKIE_SECURE"] = True
 
     app.config["USE_SESSION_FOR_NEXT"] = True
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///main.db"
+    app.config[
+        "SQLALCHEMY_DATABASE_URI"
+    ] = f"mysql+pymysql://{maria_user}:{maria_pass}@127.0.0.1/main"
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    app.config["ARGON2_TIME_COST"] = 4
+    app.config["ARGON2_PARALLELISM"] = os.cpu_count() or 4
+    app.config["ARGON2_SALT_LENGTH"] = const.ARGON2_SALT_LENGTH
+    app.config["ARGON2_HASH_LENGTH"] = const.ARGON2_HASH_LENGTH
 
     from .models import User, argon2, db
 
@@ -70,7 +82,7 @@ def create_app() -> flask.Flask:
     def _(username: str) -> Optional[User]:
         """load user by username"""
 
-        if username and len(username) <= USERNAME_LEN:
+        if username and len(username) <= const.USERNAME_LEN:
             return User.get_by_user(username)
 
     @app.after_request

@@ -8,13 +8,14 @@
 
 {% block body %}
 <h1>manage {{ user.role.name }} {{ user.username | escape }}</h1>
+{{ c.code }}
 <form method="POST">
     <fieldset>
         <legend>info</legend>
 
         <div class="form-group">
             <label for="password_old">old password</label>
-            <input inputmode="numeric" type="password" maxlength="{{ pw_len }}" minlength="1" id="password_old" name="password_old" placeholder="old password ( required on password change )" />
+            <input inputmode="numeric" type="password" minlength="1" id="password_old" name="password_old" placeholder="old password ( required on password change )" />
         </div>
 
         <div class="form-group">
@@ -24,7 +25,7 @@
 
         <div class="form-group">
             <label for="password">new password</label>
-            <input oninput="document.getElementById('password_old').required=document.getElementById('pin').required=(!!this.value)" type="password" maxlength="{{ pw_len }}" minlength="1" id="password" name="password" placeholder="new password ( password change )" />
+            <input oninput="document.getElementById('password_old').required=document.getElementById('pin').required=(!!this.value)" type="password" minlength="1" id="password" name="password" placeholder="new password ( password change )" />
         </div>
 
         <div class="form-group">
