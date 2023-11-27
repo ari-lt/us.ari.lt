@@ -90,10 +90,6 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     def _(response: flask.Response) -> flask.Response:
         """minify resources"""
 
-        if "captcha_error" in flask.session:
-            flask.session.pop("captcha_error")
-            response.status_code = 403
-
         if response.direct_passthrough:
             return response
 
