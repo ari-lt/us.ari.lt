@@ -5,7 +5,7 @@
 import os
 import secrets
 from functools import lru_cache
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import flask
 import web_mini
@@ -13,6 +13,7 @@ from flask_login import LoginManager  # type: ignore
 from werkzeug.exceptions import HTTPException
 
 from . import const
+from .util import require_role
 
 
 @lru_cache
@@ -89,6 +90,10 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     def _(response: flask.Response) -> flask.Response:
         """minify resources"""
 
+        if "captcha_error" in flask.session:
+            flask.session.pop("captcha_error")
+            response.status_code = 403
+
         if response.direct_passthrough:
             return response
 
@@ -121,6 +126,14 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
             e.code or 200,
         )
 
+    @app.context_processor  # type: ignore
+    def _() -> Dict[str, Any]:
+        """expose functions"""
+        return {
+            "require_role": require_role,
+            "Role": const.Role,
+        }
+
     from .c import c
 
     c.init_app(app)
@@ -136,5 +149,9 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     from .api import api
 
     app.register_blueprint(api, url_prefix="/api")
+
+    from .admin import admin
+
+    app.register_blueprint(admin, url_prefix="/admin")
 
     return app

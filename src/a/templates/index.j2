@@ -10,9 +10,14 @@
 <a href="{{ url_for("auth.signup") }}">sign up</a>
 <a href="{{ url_for("auth.signin") }}">sign in</a>
 
-{% if signed_in %}
+{% if current_user.is_authenticated %}
+<a href="{{ url_for("auth.delete") }}">delete account</a>
 <a href="{{ url_for("auth.signout") }}">sign out</a>
 <a href="{{ url_for("auth.manage") }}">manage user</a>
+{% endif %}
+
+{% if require_role(Role.mod) %}
+<a href="{{ url_for("admin.index") }}">admin pannel</a>
 {% endif %}
 
 <h2>users</h2>

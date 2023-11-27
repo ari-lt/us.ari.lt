@@ -53,7 +53,7 @@
             <details open>
             <summary>messages from the server</summary>
             {% for category, message in messages %}
-                <div data-category="{{ category }}">{{ message }}</div>
+                <div data-category="{{ category }}">{{ message | escape }}</div>
             {% endfor %}
             </details>
             {% endif %}

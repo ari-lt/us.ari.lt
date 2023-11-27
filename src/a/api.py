@@ -7,7 +7,7 @@ import typing as t
 import flask
 from werkzeug.wrappers import Response
 
-from . import models
+from . import const, models
 from .routing import Bp
 
 api: Bp = Bp("api", __name__)
@@ -47,3 +47,9 @@ def app(user: str, id: str) -> flask.Response:
         username=user, id=id
     ).first()
     return flask.jsonify([] if app is None else app.json())  # type: ignore
+
+
+@api.get("/roles")
+def roles() -> flask.Response:
+    """returns roles"""
+    return flask.jsonify(const.Role.json())  # type: ignore

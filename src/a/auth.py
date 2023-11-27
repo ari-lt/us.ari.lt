@@ -89,7 +89,6 @@ def manage_page() -> str:
 
     return flask.render_template(
         "manage.j2",
-        user=current_user,
         c=util.jscaptcha(),
         username_len=const.USERNAME_LEN,
         bio_len=const.BIO_LEN,
@@ -98,22 +97,19 @@ def manage_page() -> str:
 
 @auth.post("/signup")
 @nologin
+@util.captcha
 def signup() -> t.Union[t.Tuple[str, int], Response]:
     """signup logic"""
 
     username: t.Optional[str] = flask.request.form.get("username")
     password: t.Optional[str] = flask.request.form.get("password")
-    code: t.Optional[str] = flask.request.form.get("code")
-    terms: t.Optional[bool] = flask.request.form.get("terms")
+    terms: t.Optional[str] = flask.request.form.get("terms")
 
-    if not terms:
+    if terms != "on":
         return util.flash_render("terms have not been accepted", "signup.j2"), 403
 
-    if not (username and password and code) or not util.validate_username(username):
+    if not (username and password) or not util.validate_username(username):
         return util.flash_render("invalid request", "signup.j2"), 400
-
-    if not c.verify(code):
-        return util.flash_render("invalid CAPTCHA", "signup.j2"), 403
 
     pin: str = models.gen_pin()
 
@@ -132,20 +128,17 @@ def signup() -> t.Union[t.Tuple[str, int], Response]:
 
 @auth.post("/signin")
 @nologin
+@util.captcha
 def signin() -> t.Union[t.Tuple[str, int], Response]:
     """login logic"""
 
     username: t.Optional[str] = flask.request.form.get("username")
     password: t.Optional[str] = flask.request.form.get("password")
     pin: t.Optional[str] = flask.request.form.get("pin")
-    code: t.Optional[str] = flask.request.form.get("code")
     user: t.Optional[models.User]
 
-    if not (username and password and pin and code):
+    if not (username and password and pin):
         return util.flash_render("invalid request", "signin.j2"), 400
-
-    if not c.verify(code):
-        return util.flash_render("invalid CAPTCHA", "signin.j2"), 403
 
     if (user := models.User.get_by_user(username)) is None:
         return util.flash_render("no such user", "signin.j2"), 404
@@ -160,6 +153,7 @@ def signin() -> t.Union[t.Tuple[str, int], Response]:
 
 @auth.post("/manage")
 @login_required
+@util.captcha
 def manage() -> t.Tuple[str, int]:
     """manage current user"""
 
@@ -167,10 +161,6 @@ def manage() -> t.Tuple[str, int]:
     new_password: t.Optional[str] = flask.request.form.get("password")
     pin: t.Optional[str] = flask.request.form.get("pin")
     bio: t.Optional[str] = flask.request.form.get("bio")
-    code: t.Optional[str] = flask.request.form.get("code")
-
-    if not c.verify(code):
-        return util.flash_render("invalid CAPTCHA", "manage.j2", user=current_user), 403
 
     if old_password and new_password and pin:
         if not (
@@ -180,7 +170,8 @@ def manage() -> t.Tuple[str, int]:
         ):
             return (
                 util.flash_render(
-                    "invalid password( s ) or PIN", "manage.j2", user=current_user
+                    "invalid password( s ) or PIN",
+                    "manage.j2",
                 ),
                 401,
             )
@@ -196,7 +187,8 @@ def manage() -> t.Tuple[str, int]:
         models.db.session.rollback()
         return (
             util.flash_render(
-                "invalid request / server error", "manage.j2", user=current_user
+                "invalid request / server error",
+                "manage.j2",
             ),
             500,
         )
@@ -206,7 +198,35 @@ def manage() -> t.Tuple[str, int]:
             "user updated",
             "manage.j2",
             level="info",
-            user=current_user,
         ),
         200,
     )
+
+
+@auth.get("/delete")
+@login_required
+def delete() -> str:
+    """delete account"""
+    return flask.render_template("delete.j2", c=util.jscaptcha())
+
+
+@auth.post("/delete")
+@login_required
+@util.captcha
+def delete_user() -> Response:
+    """delete account"""
+
+    sure: t.Optional[str] = flask.request.form.get("sure")
+
+    if sure != "on":
+        flask.flash("account not deleted", "info")
+        return flask.redirect("/")
+
+    if not current_user.delete_user():  # type: ignore
+        flask.flash("failed to delete account", "error")
+        flask.abort(500)
+
+    logout_user()
+    flask.flash("account deleted", "info")
+
+    return flask.redirect("/")

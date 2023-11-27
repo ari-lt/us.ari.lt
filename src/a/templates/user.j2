@@ -11,6 +11,8 @@
 <pre class="bio">{{ user.bio | escape }}</pre>
 {% endif %}
 
+<p>joined at <time>{{ user.joined }}</time> GMT</p>
+
 <p>role : {{ user.role.name }}</p>
 
 {% if apps %}

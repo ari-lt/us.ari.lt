@@ -5,7 +5,6 @@
 import typing as t
 
 import flask
-from flask_login import current_user  # type: ignore
 
 from . import models
 from .routing import Bp
@@ -19,7 +18,6 @@ def index() -> str:
     return flask.render_template(
         "index.j2",
         users=models.User.query.all(),
-        signed_in=current_user.is_authenticated,  # type: ignore
     )
 
 

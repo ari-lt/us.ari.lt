@@ -4,13 +4,14 @@
 
 import typing as t
 from base64 import b85encode, urlsafe_b64encode
+from datetime import datetime
 from secrets import SystemRandom
 from string import digits
 
 from flask_argon2 import Argon2  # type: ignore
 from flask_login import UserMixin  # type: ignore
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Enum, Unicode
+from sqlalchemy import DateTime, Enum, Unicode
 from sqlalchemy.orm import Relationship, relationship
 
 from . import const, util
@@ -125,8 +126,13 @@ class User(UserMixin, db.Model):
     bio: str = db.Column(Unicode(const.BIO_LEN), nullable=False)
     password_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
     pin_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
-    role: const.Role = db.Column(Enum(const.Role))
+    role: const.Role = db.Column(Enum(const.Role), nullable=False)
     limited: bool = db.Column(db.Boolean)
+    joined: DateTime = db.Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
     apps: Relationship[App] = relationship(
         "App",
         backref="user",
@@ -191,3 +197,18 @@ class User(UserMixin, db.Model):
             "bio": self.bio,
             "role": self.role.value,
         }
+
+    def delete_user(self) -> bool:
+        """delete this user, returns true if success"""
+
+        try:
+            for app in self.apps:  # type: ignore
+                db.session.delete(app)  # type: ignore
+
+            db.session.delete(self)
+            db.session.commit()
+
+            return True
+        except Exception:
+            db.session.rollback()
+            return False

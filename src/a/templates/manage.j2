@@ -1,18 +1,18 @@
 {% extends "base.j2" %}
 
-{% block title %}@{{ user.username | escape }}{% endblock %}
+{% block title %}@{{ current_user.username | escape }}{% endblock %}
 
 {% block head %}<link rel="stylesheet" href="{{ url_for("static", filename="css/sign.css")}}" />{% endblock %}
 
-{% block description %}manage user @{{ user.username | escape }}{% endblock %}
+{% block description %}manage user @{{ current_user.username | escape }}{% endblock %}
 
 {% block body %}
-<h1>manage {{ user.role.name }} {{ user.username | escape }}</h1>
-{{ c.code }}
+<h1>manage {{ current_user.role.name }} {{ current_user.username | escape }}</h1>
 <form method="POST">
     <fieldset>
         <legend>info</legend>
 
+        {% if admin is not defined %}
         <div class="form-group">
             <label for="password_old">old password</label>
             <input inputmode="numeric" type="password" minlength="1" id="password_old" name="password_old" placeholder="old password ( required on password change )" />
@@ -22,15 +22,34 @@
             <label for="pin">PIN</label>
             <input type="password" maxlength="{{ pin_len }}" minlength="1" id="pin" name="pin" placeholder="pin ( required on password change )" />
         </div>
+        {% endif %}
 
+        {% if admin is not defined %}
         <div class="form-group">
             <label for="password">new password</label>
             <input oninput="document.getElementById('password_old').required=document.getElementById('pin').required=(!!this.value)" type="password" minlength="1" id="password" name="password" placeholder="new password ( password change )" />
         </div>
+        {% elif require_role(Role.admin) %}
+        <div class="form-group">
+            <label for="password"> new password</label>
+            <input minlength="1" id="password" name="password" placeholder="new password ( password change )" />
+        </div>
+        {% endif %}
+
+        {% if admin is defined %}
+        <div class="form-group">
+            <label for="role">role</label>
+            <select id="role" name="role">
+                {% for role, value in Role.json().items() if value < admin.role.value %}
+                <option value="{{ value }}" {{ "selected" if value == current_user.role.value else "" }}>{{ role }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
 
         <div class="form-group">
             <label for="bio">bio</label>
-            <textarea maxlength="{{ bio_len }}" name="bio" id="bio" placeholder="hi, i'm ...">{{ user.bio }}</textarea>
+            <textarea maxlength="{{ bio_len }}" name="bio" id="bio" placeholder="hi, i'm ...">{{ current_user.bio }}</textarea>
         </div>
 
         <div id=captcha class="captcha">

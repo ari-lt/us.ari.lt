@@ -1,0 +1,36 @@
+{% extends "base.j2" %}
+
+{% block title %}delete @{{ current_user.username | escape }}{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for("static", filename="css/sign.css")}}" />{% endblock %}
+
+{% block description %}delete user @{{ current_user.username | escape }}{% endblock %}
+
+{% block body %}
+<h1>delete {{ current_user.role.name }} {{ current_user.username | escape }}</h1>
+<form method="POST">
+    <fieldset>
+        <legend>are you sure</legend>
+
+        <div class="form group">
+            <label for="sure">i am 100% sure that i want to delete this account and all of its data</label>
+            <input required type="checkbox" id="sure" name="sure" />
+        </div>
+
+        <div id=captcha class="captcha">
+            {% if c is not none %}
+            {{ c.image() }} {{ c.audio() }}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="code">CAPTCHA</label>
+            <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
+        </div>
+
+        <button type="submit">delete my account</button>
+    </fieldset>
+</form>
+{% include "captcha.j2" %}
+{% endblock %}
+

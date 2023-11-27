@@ -1,0 +1,22 @@
+{% extends "base.j2" %}
+
+{% block title %}Admin{% endblock %}
+
+{% block description %}admin pannel of ari-web{% endblock %}
+
+{% block body %}
+<h1>admin pannel</h1>
+
+<h2>manage users</h2>
+
+<ul>
+    {% for user in users %}
+    <li>
+        {{ user.role.name }} <a href="manage/@{{ user.username | urlencode }}">{{ user.username | escape }}</a>
+        {% if require_role(Role.admin) %}
+        ( <a href="delete/@{{ user.username | urlencode }}">delete</a> )
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
