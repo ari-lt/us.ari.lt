@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""a.ari-web.xyz"""
+"""a.ari.lt"""
 
 import os
 import sys
