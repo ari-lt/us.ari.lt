@@ -13,6 +13,18 @@ from ..routing import Bp
 api: Bp = Bp("api", __name__)
 
 
+@api.after_request  # type: ignore
+def after_request(response: flask.Response) -> flask.Response:
+    response.headers["Expires"] = "Thu, 01 Jan 1970 00:00:00 GMT"
+    response.headers[
+        "Cache-Control"
+    ] = "max-age=0, no-cache, must-revalidate, proxy-revalidate"
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET"
+
+    return response
+
+
 @api.get("/")
 def index() -> Response:
     """index"""
@@ -47,10 +59,20 @@ def app(user: str, id: str) -> flask.Response:
         username=user,
         id=id,
     ).first()
-    return flask.jsonify([] if app is None else app.json())  # type: ignore
+
+    if app is None:
+        flask.abort(404)
+
+    return flask.jsonify(app.json())  # type: ignore
 
 
 @api.get("/roles")
 def roles() -> flask.Response:
     """returns roles"""
     return flask.jsonify(const.Role.json())  # type: ignore
+
+
+@api.get("/apps")
+def apps() -> flask.Response:
+    """returns apps"""
+    return flask.jsonify(flask.current_app.config["SUBAPPS"])  # type: ignore

@@ -113,7 +113,7 @@ def delete_user(user: str) -> t.Union[str, Response]:
     sure: t.Optional[str] = flask.request.form.get("sure")
     usr: t.Optional[models.User]
 
-    if sure != "on":
+    if not sure:
         flask.flash("account not deleted", "info")
         return flask.redirect(flask.url_for("admin.index"))
 

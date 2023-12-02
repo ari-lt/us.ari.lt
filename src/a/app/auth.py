@@ -105,7 +105,7 @@ def signup() -> t.Union[t.Tuple[str, int], Response]:
     password: t.Optional[str] = flask.request.form.get("password")
     terms: t.Optional[str] = flask.request.form.get("terms")
 
-    if terms != "on":
+    if not terms:
         return util.flash_render("terms have not been accepted", "signup.j2"), 403
 
     if not (username and password) or not util.validate_username(username):
@@ -134,6 +134,7 @@ def signin() -> t.Union[t.Tuple[str, int], Response]:
 
     username: t.Optional[str] = flask.request.form.get("username")
     password: t.Optional[str] = flask.request.form.get("password")
+    remember: t.Optional[str] = flask.request.form.get("remember")
     pin: t.Optional[str] = flask.request.form.get("pin")
     user: t.Optional[models.User]
 
@@ -146,7 +147,7 @@ def signin() -> t.Union[t.Tuple[str, int], Response]:
     if not (user.verify_password(password) and user.verify_pin(pin)):
         return util.flash_render("invalid pin and / or password", "signin.j2"), 401
 
-    login_user(user, True)
+    login_user(user, bool(remember))
 
     return flask.redirect("/")
 
@@ -218,7 +219,7 @@ def delete_user() -> Response:
 
     sure: t.Optional[str] = flask.request.form.get("sure")
 
-    if sure != "on":
+    if not sure:
         flask.flash("account not deleted", "info")
         return flask.redirect("/")
 

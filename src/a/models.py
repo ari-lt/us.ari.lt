@@ -12,6 +12,7 @@ from flask_argon2 import Argon2  # type: ignore
 from flask_login import UserMixin  # type: ignore
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import DateTime, Enum, Unicode
+from sqlalchemy.dialects import mysql
 from sqlalchemy.orm import Relationship, relationship
 
 from . import const, util
@@ -41,16 +42,75 @@ def hash_verify(data: str, h: str) -> bool:
     return argon2.check_password_hash(h, data)  # type: ignore
 
 
-class App(db.Model):
-    """user app"""
+def gen_id(model: t.Any) -> str:  # type: ignore
+    """generate an id"""
+
+    while True:
+        generated_id: str = urlsafe_b64encode(rand.randbytes(const.ID_LEN)).decode(
+            "ascii"
+        )[: const.ID_LEN]
+
+        try:
+            if not model.query.filter_by(id=generated_id).first():  # type: ignore
+                return generated_id
+        except Exception:
+            continue
+
+
+class Counter(db.Model):
+    """user counter"""
 
     id: str = db.Column(
-        db.String(const.APP_ID_LEN),
+        db.String(const.ID_LEN),
         primary_key=True,
         nullable=False,
         unique=True,
     )
-    name: str = db.Column(Unicode(const.APP_NAME_LEN), nullable=False)
+    name: str = db.Column(Unicode(const.NAME_LEN), nullable=False)
+    count: int = db.Column(mysql.INTEGER(unsigned=True))
+    username: str = db.Column(
+        Unicode(const.USERNAME_LEN),
+        db.ForeignKey("user.username"),
+        nullable=False,
+    )
+
+    def __init__(self, name: str, username: str) -> None:
+        self.id: str = gen_id(self)
+        self.name: str = name
+        self.username: str = username
+
+    def to_svg(self) -> str:
+        """convert count to svg"""
+
+        svg_width: int = len(str(self.count)) * 14
+
+        svg: str = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width}" height="20">'
+        )
+        svg += f'<text x="{svg_width / 2}" y="20" font-size="20px" fill="white" text-anchor="middle" font-family="sans-serif">{self.count}</text>'
+        svg += "</svg>"
+
+        return svg
+
+    def json(self) -> t.Dict[str, t.Any]:
+        """convert counter to json"""
+
+        return {
+            "name": self.name,
+            "count": self.count,
+        }
+
+
+class App(db.Model):
+    """user app"""
+
+    id: str = db.Column(
+        db.String(const.ID_LEN),
+        primary_key=True,
+        nullable=False,
+        unique=True,
+    )
+    name: str = db.Column(Unicode(const.NAME_LEN), nullable=False)
     public: bool = db.Column(db.Boolean)
     secret_hash: t.Optional[str] = db.Column(db.String(const.HASH_LEN))
     username: str = db.Column(
@@ -66,7 +126,7 @@ class App(db.Model):
         public: bool = False,
         secret: t.Optional[str] = None,
     ) -> None:
-        self.id: str = self.gen_id()
+        self.id: str = gen_id(self)
         self.name: str = name
         self.public: bool = public
 
@@ -88,21 +148,6 @@ class App(db.Model):
             if self.public
             else hash_data(gen_secret() if secret is None else secret)
         )
-
-    def gen_id(self) -> str:
-        """generate an app id"""
-
-        while True:
-            generated_id: str = urlsafe_b64encode(
-                rand.randbytes(const.APP_ID_LEN)
-            ).decode("ascii")[: const.APP_ID_LEN]
-
-            try:
-                if not self.query.filter_by(id=generated_id).first():
-                    return generated_id
-            except Exception:
-                db.session.rollback()
-                continue
 
     def json(self) -> t.Dict[str, t.Any]:
         """return app as json"""
@@ -135,6 +180,11 @@ class User(UserMixin, db.Model):
     )
     apps: Relationship[App] = relationship(
         "App",
+        backref="user",
+        lazy="dynamic",
+    )
+    counters: Relationship[Counter] = relationship(
+        "Counter",
         backref="user",
         lazy="dynamic",
     )

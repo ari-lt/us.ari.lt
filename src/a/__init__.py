@@ -2,18 +2,26 @@
 # -*- coding: utf-8 -*-
 """a.ari.lt"""
 
+import base64
 import os
+import re
 import secrets
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import Any, Dict, Optional, Tuple
 
 import flask
 import web_mini
 from flask_login import LoginManager  # type: ignore
 from werkzeug.exceptions import HTTPException
+from werkzeug.routing import Rule
 
-from . import const
+from . import const, crypt
 from .util import require_role
+
+
+def random_cookie_salt() -> str:
+    """generates a random cookie salt"""
+    return base64.b85encode(crypt.RAND.randbytes(64)).decode("ascii")
 
 
 @lru_cache
@@ -27,6 +35,8 @@ def assign_apps(
     app_dir: str = os.path.dirname(__file__) + "/app",
 ) -> flask.Flask:
     """assign all apps in `app_dir` directory"""
+
+    app.config["SUBAPPS"] = []
 
     d: str = os.getcwd()
 
@@ -47,8 +57,57 @@ def assign_apps(
 
         exec(f"from .{b}.{mod} import {mod}")
         app.register_blueprint(eval(mod), url_prefix=f"/{mod}")
+        app.config["SUBAPPS"].append(subapp[:-3])
 
     os.chdir(d)
+
+    return app
+
+
+def assign_http(app: flask.Flask) -> flask.Flask:
+    """assign http file stuff"""
+
+    def _new_route(content: str, mime: str) -> flask.Response:
+        """new route"""
+
+        return flask.Response(content, mimetype=mime)
+
+    for file, mime in (
+        ("robots.txt", "text/plain"),
+        ("manifest.json", "application/json"),
+    ):
+        if not os.path.isfile(file):
+            continue
+
+        with open(file, "r") as fp:
+            part: partial[flask.Response] = partial(_new_route, fp.read(), mime)
+            part.__name__ = "_" + file.replace(".", "_")  # type: ignore
+            app.route(f"/{file}", methods=["GET", "POST"])(part)  # type: ignore
+
+    # gen sitemap
+
+    rule: Rule
+
+    pat: re.Pattern[str] = re.compile(r"<.+?:(.+?)>")
+
+    sitemap: str = '<?xml version="1.0" encoding="UTF-8"?>\
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+
+    for rule in app.url_map.iter_rules():
+        url: str = pat.sub(r"\1", rule.rule)
+
+        sitemap += "<url>"
+        sitemap += f'<loc>{app.config["PREFERRED_URL_SCHEME"]}://{app.config["DOMAIN"]}{url}</loc>'
+        sitemap += "<priority>1.0</priority>"
+        sitemap += "</url>"
+
+    sitemap += "</urlset>"
+    sitemap = sitemap.replace("@user", f"@{app.config['OWNER_USER']}")
+
+    @app.route("/sitemap.xml", methods=["GET", "POST"])
+    def _() -> flask.Response:
+        """sitemap"""
+        return flask.Response(sitemap, mimetype="application/xml")
 
     return app
 
@@ -60,6 +119,8 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
 
     app: flask.Flask = flask.Flask(__name__)
 
+    # secret
+
     if not os.path.exists("secret.key"):
         with open("secret.key", "wb") as fp:
             fp.write(secrets.SystemRandom().randbytes(2**14))
@@ -68,6 +129,9 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
         app.config["SECRET_KEY"] = fp.read()
 
     app.config["PREFERRED_URL_SCHEME"] = "https"
+    app.config["DOMAIN"] = "us.ari.lt"
+
+    app.config["OWNER_USER"] = "ari"
 
     app.config["CAPTCHA_PEPPER_FILE"] = "captcha.key"
     app.config["CAPTCHA_EXPIRY"] = 60 * 10  # 10 minutes
@@ -121,6 +185,17 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     def _(response: flask.Response) -> flask.Response:
         """minify resources"""
 
+        # wher .update() ??11/!?@?/
+
+        response.headers[
+            "Strict-Transport-Security"
+        ] = "max-age=63072000; includeSubDomains; preload"
+        response.headers["X-Frame-Options"] = "deny"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Content-Security-Policy"] = "upgrade-insecure-requests"
+        response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
+        response.headers["Referrer-Policy"] = "no-referrer"
+
         if response.direct_passthrough:
             return response
 
@@ -169,6 +244,6 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
 
     app.register_blueprint(views, url_prefix="/")
 
-    assign_apps(app)
+    assign_http(assign_apps(app))
 
     return app

@@ -6,9 +6,9 @@ from enum import Enum, auto
 from typing import Dict, Final
 
 PIN_LEN: Final[int] = 6
-APP_ID_LEN: Final[int] = 96
+ID_LEN: Final[int] = 64
+NAME_LEN: Final[int] = 256
 APP_SECRET_LEN: Final[int] = 512
-APP_NAME_LEN: Final[int] = 256
 USERNAME_LEN: Final[int] = 256
 BIO_LEN: Final[int] = 1024
 
@@ -31,7 +31,7 @@ class Role(Enum):
     admin = (
         auto()
     )  # everything a mod can do, but they can also delete users ( which in turn deletes all trace of them too )
-    owner = auto()  # literally can do anything
+    owner = auto()  # can literally do anything
 
     @classmethod
     def json(cls) -> Dict[str, int]:

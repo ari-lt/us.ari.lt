@@ -38,6 +38,11 @@
             <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
         </div>
 
+        <div class="form group">
+            <label for="remember">remember me</label>
+            <input checked type="checkbox" id="remember" name="remember" />
+        </div>
+
         <button type="submit">sign in</button>
     </fieldset>
     <p>don't have an account ? <a href="{{ url_for("auth.signup") }}{{ "" if c is none else "?nojs" }}">sign up</a></p>
