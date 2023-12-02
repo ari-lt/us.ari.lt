@@ -8,11 +8,10 @@ import flask
 from flask_login import current_user  # type: ignore
 from werkzeug.wrappers import Response
 
-from . import const, models, util
-from .c import c
-from .routing import Bp
+from .. import const, models, util
+from ..routing import Bp
 
-admin: Bp = Bp("admin", __name__)
+admin: Bp = Bp("admin", __name__).set_role(const.Role.mod)
 
 
 @admin.get("/")

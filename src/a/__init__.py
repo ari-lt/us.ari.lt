@@ -22,6 +22,37 @@ def min_css(css: str) -> str:
     return web_mini.css.minify_css(css)
 
 
+def assign_apps(
+    app: flask.Flask,
+    app_dir: str = os.path.dirname(__file__) + "/app",
+) -> flask.Flask:
+    """assign all apps in `app_dir` directory"""
+
+    d: str = os.getcwd()
+
+    b: str = os.path.basename(app_dir)
+
+    os.chdir(app_dir)
+
+    for subapp in os.listdir(app_dir):
+        if ".py" != subapp[-3:] or not os.path.isfile(subapp):
+            continue
+
+        mod: str = os.path.splitext(subapp)[0]
+
+        if mod[0] == "_":
+            continue
+
+        app.logger.debug(f"setting {mod!r} up")
+
+        exec(f"from .{b}.{mod} import {mod}")
+        app.register_blueprint(eval(mod), url_prefix=f"/{mod}")
+
+    os.chdir(d)
+
+    return app
+
+
 def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     """create a new flask app"""
 
@@ -138,16 +169,6 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
 
     app.register_blueprint(views, url_prefix="/")
 
-    from .auth import auth
-
-    app.register_blueprint(auth, url_prefix="/auth")
-
-    from .api import api
-
-    app.register_blueprint(api, url_prefix="/api")
-
-    from .admin import admin
-
-    app.register_blueprint(admin, url_prefix="/admin")
+    assign_apps(app)
 
     return app

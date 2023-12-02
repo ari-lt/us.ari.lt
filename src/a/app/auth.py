@@ -11,10 +11,10 @@ from flask_login import login_required  # type: ignore
 from flask_login import current_user, login_user, logout_user  # type: ignore
 from werkzeug.wrappers import Response
 
-from . import const, models, util
-from .c import audio as gen_audio_captcha
-from .c import c
-from .routing import Bp
+from .. import const, models, util
+from ..c import audio as gen_audio_captcha
+from ..c import c
+from ..routing import Bp
 
 auth: Bp = Bp("auth", __name__)
 

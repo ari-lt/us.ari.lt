@@ -7,8 +7,8 @@ import typing as t
 import flask
 from werkzeug.wrappers import Response
 
-from . import const, models
-from .routing import Bp
+from .. import const, models
+from ..routing import Bp
 
 api: Bp = Bp("api", __name__)
 
@@ -44,7 +44,8 @@ def app(user: str, id: str) -> flask.Response:
     """app api"""
 
     app: t.Optional[models.App] = models.App.query.filter_by(  # type: ignore
-        username=user, id=id
+        username=user,
+        id=id,
     ).first()
     return flask.jsonify([] if app is None else app.json())  # type: ignore
 
