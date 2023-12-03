@@ -7,3 +7,4 @@ web-mini
 werkzeug
 pydub
 pymysql
+flask-limiter

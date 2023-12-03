@@ -6,11 +6,14 @@ import base64
 import os
 import re
 import secrets
+import time
 from functools import lru_cache, partial
 from typing import Any, Dict, Optional, Tuple
 
 import flask
 import web_mini
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask_login import LoginManager  # type: ignore
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Rule
@@ -168,6 +171,12 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     argon2.init_app(app)  # type: ignore
 
     lm: LoginManager = LoginManager(app)
+    limit: Limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["10000 per day", "1500 per hour", "50 per minute"],
+        storage_uri="memory://",
+    )
 
     lm.login_view = "auth.signin"  # type: ignore
     lm.refresh_view = "auth.signin"  # type: ignore
@@ -181,6 +190,11 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
 
         if username and len(username) <= const.USERNAME_LEN:
             return User.get_by_user(username)
+
+    @app.before_request
+    @limit.limit("")
+    def _() -> None:
+        """limit all requests"""
 
     @app.after_request
     def _(response: flask.Response) -> flask.Response:
@@ -217,8 +231,20 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
         )
 
     @app.errorhandler(HTTPException)
-    def _(e: HTTPException) -> Tuple[str, int]:
+    def _(e: HTTPException) -> Tuple[Any, int]:
         """handle http errors"""
+
+        if e.code == 429:
+            time.sleep(crypt.RAND.random() * 15)
+
+            return (
+                flask.Response(
+                    f"too many requests : {e.description or '<limit>'}",
+                    mimetype="text/plain",
+                ),
+                429,
+            )
+
         return (
             flask.render_template(
                 "http.j2",
