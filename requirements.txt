@@ -8,3 +8,4 @@ werkzeug
 pydub
 pymysql
 flask-limiter
+cryptography
