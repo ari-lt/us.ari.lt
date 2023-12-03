@@ -9,6 +9,7 @@ main() {
 START TRANSACTION;
 DROP TABLE app;
 DROP TABLE user;
+DROP TABLE counter;
 COMMIT;
 EOF
 }

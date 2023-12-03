@@ -5,21 +5,59 @@
 import typing as t
 from base64 import b85encode, urlsafe_b64encode
 from datetime import datetime
+from decimal import Decimal
+from html import escape as html_escape
 from secrets import SystemRandom
 from string import digits
 
+import flask
 from flask_argon2 import Argon2  # type: ignore
 from flask_login import UserMixin  # type: ignore
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import DateTime, Enum, Unicode
-from sqlalchemy.dialects import mysql
+from sqlalchemy import DECIMAL, DateTime, Dialect, Enum, TypeDecorator, Unicode
 from sqlalchemy.orm import Relationship, relationship
 
-from . import const, util
+from . import const, types, util
 
 db: SQLAlchemy = SQLAlchemy()
 argon2: Argon2 = Argon2()
 rand: SystemRandom = SystemRandom()
+
+
+class HugeUInt(TypeDecorator):  # type: ignore
+    """huge int type, 0 to (10**64)-1"""
+
+    impl: t.Any = DECIMAL
+
+    def load_dialect_impl(self, dialect: Dialect) -> t.Any:
+        """load dialect impl"""
+        return dialect.type_descriptor(DECIMAL(65, 0))  # type: ignore
+
+    def process_bind_param(
+        self,
+        value: t.Optional[t.Any],
+        dialect: Dialect,
+    ) -> t.Optional[int]:
+        """process binding"""
+
+        types.Unused(dialect)
+
+        if value is not None:
+            if value < 0 or value > const.HUGEINT_MAX:
+                raise ValueError("HugeUInt out of range [0;HUGEINT_MAX]")
+            else:
+                return int(value)
+        else:
+            return None
+
+    def process_result_value(
+        self,
+        value: t.Optional[t.Any],
+        dialect: Dialect,
+    ) -> t.Optional[Decimal]:
+        """process dialect"""
+        types.Unused(dialect)
+        return Decimal(value) if value is not None else None
 
 
 def gen_pin() -> str:
@@ -67,27 +105,103 @@ class Counter(db.Model):
         unique=True,
     )
     name: str = db.Column(Unicode(const.NAME_LEN), nullable=False)
-    count: int = db.Column(mysql.INTEGER(unsigned=True))
+    count: int = db.Column(HugeUInt())
     username: str = db.Column(
         Unicode(const.USERNAME_LEN),
         db.ForeignKey("user.username"),
         nullable=False,
     )
+    origins: str = db.Column(
+        db.String(const.COUNTER_ORIGINS_LEN),
+        default="*",
+        nullable=False,
+    )
+    active: DateTime = db.Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
 
-    def __init__(self, name: str, username: str) -> None:
+    def __init__(
+        self,
+        name: str,
+        username: str,
+        count: int = 0,
+        origins: str = "*",
+    ) -> None:
+        assert len(self.query.filter_by(username=username).all()) <= const.COUNTERS_LIMIT, "too many counters"  # type: ignore
+        assert count <= const.HUGEINT_MAX, "count out of range"
+
         self.id: str = gen_id(self)
-        self.name: str = name
+        self.set_name(name)
+        self.count: int = count
         self.username: str = username
+        self.set_origins(origins)
 
-    def to_svg(self) -> str:
-        """convert count to svg"""
+    def set_name(self, name: str) -> "Counter":
+        """set name"""
 
-        svg_width: int = len(str(self.count)) * 14
+        assert len(name) <= const.NAME_LEN, "name too long"
+        self.name = name
+        return self
 
-        svg: str = (
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_width}" height="20">'
-        )
-        svg += f'<text x="{svg_width / 2}" y="20" font-size="20px" fill="white" text-anchor="middle" font-family="sans-serif">{self.count}</text>'
+    def set_origins(self, origins: str) -> "Counter":
+        """set origins"""
+
+        origins = origins.splitlines()[0].strip()
+
+        assert len(origins) <= const.COUNTER_ORIGINS_LEN, "name too long"
+        self.origins = origins
+        return self
+
+    def set_count(self, count: int) -> "Counter":
+        """set count"""
+
+        assert count <= const.HUGEINT_MAX, "count out of range"
+        self.count = count
+        return self
+
+    def to_svg(
+        self,
+        fill: t.Optional[str] = None,
+        font: t.Optional[str] = None,
+        size: t.Optional[float] = None,
+        baseline: t.Optional[float] = None,
+        ratio: t.Optional[float] = None,
+        padding: t.Optional[float] = None,
+    ) -> str:
+        """convert count to svg
+
+        fill -- text colour
+        font -- font family
+        size -- font size in pixels
+        baseline -- baseline offset
+        padding -- padding of characters
+        ratio -- character ratio"""
+
+        if fill is None:
+            fill = "#fff"
+        else:
+            fill = html_escape(fill)
+
+        if font is None:
+            font = "sans-serif"
+        else:
+            font = html_escape(font)
+
+        size = size or 16
+
+        if baseline is None:
+            baseline = 1
+
+        if ratio is None:
+            ratio = 1
+
+        if padding is None:
+            padding = 1 / ratio
+
+        svg: str = f'<svg xmlns="http://www.w3.org/2000/svg" width="{len(str(self.count)) + padding * ratio}ch" height="{size}" font-size="{size}">'
+        svg += f'<text x="50%" y="{size - baseline}" text-anchor="middle" fill="{fill}" font-family="{font}">{self.count}</text>'
         svg += "</svg>"
 
         return svg
@@ -100,6 +214,20 @@ class Counter(db.Model):
             "count": self.count,
         }
 
+    def inc_or_404(self) -> "Counter":
+        """increment or 404"""
+
+        if self.count >= const.HUGEINT_MAX:
+            return self
+
+        try:
+            self.count += 1
+            db.session.commit()
+        except Exception:
+            flask.abort(500)
+
+        return self
+
 
 class App(db.Model):
     """user app"""
@@ -111,11 +239,16 @@ class App(db.Model):
         unique=True,
     )
     name: str = db.Column(Unicode(const.NAME_LEN), nullable=False)
-    public: bool = db.Column(db.Boolean)
+    public: bool = db.Column(db.Boolean, default=False)
     secret_hash: t.Optional[str] = db.Column(db.String(const.HASH_LEN))
     username: str = db.Column(
         Unicode(const.USERNAME_LEN),
         db.ForeignKey("user.username"),
+        nullable=False,
+    )
+    created: DateTime = db.Column(
+        DateTime,
+        default=datetime.utcnow,
         nullable=False,
     )
 
@@ -126,6 +259,9 @@ class App(db.Model):
         public: bool = False,
         secret: t.Optional[str] = None,
     ) -> None:
+        assert len(name) <= const.NAME_LEN, "name too long"
+        assert len(self.query.filter_by(username=username).all()) <= const.APPS_LIMIT, "too many apps"  # type: ignore
+
         self.id: str = gen_id(self)
         self.name: str = name
         self.public: bool = public
@@ -168,11 +304,13 @@ class User(UserMixin, db.Model):
         unique=True,
         nullable=False,
     )
-    bio: str = db.Column(Unicode(const.BIO_LEN), nullable=False)
+    bio: str = db.Column(Unicode(const.BIO_LEN), nullable=False, default="")
     password_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
     pin_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
-    role: const.Role = db.Column(Enum(const.Role), nullable=False)
-    limited: bool = db.Column(db.Boolean)
+    role: const.Role = db.Column(
+        Enum(const.Role), nullable=False, default=const.Role.user
+    )
+    limited: bool = db.Column(db.Boolean, default=False)
     joined: DateTime = db.Column(
         DateTime,
         default=datetime.utcnow,

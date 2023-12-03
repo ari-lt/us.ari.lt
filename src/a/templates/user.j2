@@ -18,7 +18,7 @@
 {% if apps %}
 <h2>apps</h2>
 {% for app in apps %}
-<li><a href="{{ app.id | urlencode }}">{{ app.name | escape }}</a></li>
+<li><a href="{{ app.id }}">{{ app.name | escape }}</a></li>
 {% endfor %}
 {% endif %}
 {% endblock %}

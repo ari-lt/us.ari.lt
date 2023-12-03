@@ -75,6 +75,7 @@ def assign_http(app: flask.Flask) -> flask.Flask:
     for file, mime in (
         ("robots.txt", "text/plain"),
         ("manifest.json", "application/json"),
+        ("favicon.ico", "image/vnd.microsoft.icon"),
     ):
         if not os.path.isfile(file):
             continue
@@ -234,6 +235,12 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
         return {
             "require_role": require_role,
             "Role": const.Role,
+            "pin_len": const.PIN_LEN,
+            "name_len": const.NAME_LEN,
+            "username_len": const.USERNAME_LEN,
+            "bio_len": const.USERNAME_LEN,
+            "origins_len": const.COUNTER_ORIGINS_LEN,
+            "rurl": flask.request.host_url + flask.request.path[1:],
         }
 
     from .c import c

@@ -11,11 +11,17 @@ NAME_LEN: Final[int] = 256
 APP_SECRET_LEN: Final[int] = 512
 USERNAME_LEN: Final[int] = 256
 BIO_LEN: Final[int] = 1024
+COUNTER_ORIGINS_LEN: Final[int] = 512
 
 ARGON2_SALT_LENGTH: Final[int] = 32
 ARGON2_HASH_LENGTH: Final[int] = 512
 
 HASH_LEN: Final[int] = ARGON2_SALT_LENGTH + ARGON2_HASH_LENGTH + 256
+
+APPS_LIMIT: Final[int] = 128
+COUNTERS_LIMIT: Final[int] = 128
+
+HUGEINT_MAX: Final[int] = (10**65) - 1
 
 
 class Role(Enum):

@@ -11,7 +11,7 @@ from flask_login import login_required  # type: ignore
 from flask_login import current_user, login_user, logout_user  # type: ignore
 from werkzeug.wrappers import Response
 
-from .. import const, models, util
+from .. import models, util
 from ..c import audio as gen_audio_captcha
 from ..c import c
 from ..routing import Bp
@@ -90,8 +90,6 @@ def manage_page() -> str:
     return flask.render_template(
         "manage.j2",
         c=util.jscaptcha(),
-        username_len=const.USERNAME_LEN,
-        bio_len=const.BIO_LEN,
     )
 
 

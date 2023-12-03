@@ -10,19 +10,7 @@ from werkzeug.wrappers import Response
 from .. import const, models
 from ..routing import Bp
 
-api: Bp = Bp("api", __name__)
-
-
-@api.after_request  # type: ignore
-def after_request(response: flask.Response) -> flask.Response:
-    response.headers["Expires"] = "Thu, 01 Jan 1970 00:00:00 GMT"
-    response.headers[
-        "Cache-Control"
-    ] = "max-age=0, no-cache, must-revalidate, proxy-revalidate"
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET"
-
-    return response
+api: Bp = Bp("api", __name__).set_api()
 
 
 @api.get("/")
@@ -51,17 +39,14 @@ def user(username: str) -> flask.Response:
     )
 
 
-@api.get("/@<string:user>/<string:id>")
+@api.get("/app/@<string:user>/<string:id>")
 def app(user: str, id: str) -> flask.Response:
     """app api"""
 
-    app: t.Optional[models.App] = models.App.query.filter_by(  # type: ignore
+    app: models.App = models.App.query.filter_by(  # type: ignore
         username=user,
         id=id,
-    ).first()
-
-    if app is None:
-        flask.abort(404)
+    ).first_or_404()
 
     return flask.jsonify(app.json())  # type: ignore
 
@@ -76,3 +61,15 @@ def roles() -> flask.Response:
 def apps() -> flask.Response:
     """returns apps"""
     return flask.jsonify(flask.current_app.config["SUBAPPS"])  # type: ignore
+
+
+@api.get("/counter/@<string:user>/<string:id>")
+def counter(user: str, id: str) -> flask.Response:
+    """returns apps"""
+
+    counter: models.Counter = models.Counter.query.filter_by(
+        username=user,
+        id=id,
+    ).first_or_404()
+
+    return flask.jsonify(counter.json())  # type: ignore

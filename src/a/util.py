@@ -3,7 +3,7 @@
 """utils"""
 
 from functools import wraps
-from typing import Any, Callable, Optional
+from typing import Any, Callable, NoReturn, Optional
 
 import flask
 from flask_login import current_user, login_required  # type: ignore
@@ -33,10 +33,14 @@ def flash_render(
     return flask.render_template(
         template,
         **({"c": jscaptcha()} if captcha else {}),
-        pin_len=const.PIN_LEN,
-        username_len=const.USERNAME_LEN,
         **kwargs,
     )
+
+
+def flash_abort(msg: str, code: int, level: str = "message") -> NoReturn:
+    """flash and abort"""
+    flask.flash(msg, level)
+    flask.abort(code)
 
 
 def validate_username(username: str) -> bool:
@@ -49,13 +53,21 @@ def validate_username(username: str) -> bool:
     return True
 
 
-def require_role(role: const.Role) -> bool:
+def require_role(role: const.Role, allow_limit: bool = True) -> bool:
     """require a role"""
-    return not current_user.is_anonymous and role.value <= current_user.role.value  # type: ignore
+
+    if current_user.is_anonymous:  # type: ignore
+        return False
+
+    if (not allow_limit) and current_user.limited:  # type: ignore
+        return False
+
+    return role.value <= current_user.role.value  # type: ignore
 
 
 def require_role_route(
-    role: const.Role,
+    *r_args: Any,
+    **r_kwargs: Any,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """require a role ( flask )"""
 
@@ -67,7 +79,7 @@ def require_role_route(
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             """function wrapper"""
 
-            if require_role(role):
+            if require_role(*r_args, **r_kwargs):
                 return fn(*args, **kwargs)
             else:
                 flask.abort(403)
@@ -87,10 +99,34 @@ def captcha(fn: Callable[..., Any]) -> Callable[..., Any]:
         # TODO better handling of invalid captcha, rn it just returns 302 which returns 200
         # which sucks and does not properly indicate error
 
-        if not c.verify(flask.request.form.get("code")):
+        if not flask.current_app.debug and not c.verify(flask.request.form.get("code")):
             flask.flash("invalid CAPTCHA", "error")
             return flask.redirect(flask.request.url)
 
         return fn(*args, **kwargs)
+
+    return wrapper
+
+
+def make_api(response: flask.Response) -> flask.Response:
+    """make api endpoint ( disables cors and caching )"""
+
+    response.headers["Expires"] = "Thu, 01 Jan 1970 00:00:00 GMT"
+    response.headers[
+        "Cache-Control"
+    ] = "max-age=0, no-cache, must-revalidate, proxy-revalidate"
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST"
+
+    return response
+
+
+def api(fn: Callable[..., Any]) -> Callable[..., Any]:
+    """api endpoint"""
+
+    @wraps(fn)
+    def wrapper(*args: Any, **kwargs: Any) -> flask.Response:
+        """decorator"""
+        return make_api(flask.make_response(fn(*args, **kwargs)))
 
     return wrapper

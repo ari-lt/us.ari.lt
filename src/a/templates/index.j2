@@ -14,6 +14,7 @@
 <a href="{{ url_for("auth.delete") }}">delete account</a>
 <a href="{{ url_for("auth.signout") }}">sign out</a>
 <a href="{{ url_for("auth.manage") }}">manage user</a>
+<a href="{{ url_for("counter.index") }}">counters management</a>
 {% endif %}
 
 {% if require_role(Role.mod) %}

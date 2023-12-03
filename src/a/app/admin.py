@@ -29,13 +29,12 @@ def index() -> str:
 def manage(user: str) -> t.Union[str, Response]:
     """manage user"""
 
-    usr: t.Optional[models.User]
-
     if user == current_user.username:  # type: ignore
         return flask.redirect(flask.url_for("auth.manage"))
 
-    if (usr := models.User.query.filter_by(username=user).first()) is None:  # type: ignore
-        flask.abort(404)
+    usr: t.Optional[models.User] = models.User.query.filter_by(
+        username=user
+    ).first_or_404()
 
     return flask.render_template(
         "manage.j2",
@@ -51,13 +50,12 @@ def manage(user: str) -> t.Union[str, Response]:
 def manage_user(user: str) -> Response:
     """manage user"""
 
-    usr: t.Optional[models.User]
-
     if user == current_user.username:  # type: ignore
         flask.abort(400)
 
-    if (usr := models.User.query.filter_by(username=user).first()) is None:  # type: ignore
-        flask.abort(404)
+    usr: t.Optional[models.User] = models.User.query.filter_by(
+        username=user
+    ).first_or_404()
 
     password: t.Optional[str] = flask.request.form.get("password")
     role: t.Optional[str] = flask.request.form.get("role")
@@ -69,7 +67,7 @@ def manage_user(user: str) -> Response:
     if role:
         try:
             usr.role = const.Role(int(role))
-        except ValueError:
+        except Exception:
             flask.flash("failed to update the role : invalid value")
 
     if bio is not None:
@@ -89,13 +87,12 @@ def manage_user(user: str) -> Response:
 def delete(user: str) -> t.Union[str, Response]:
     """delete a user"""
 
-    usr: t.Optional[models.User]
-
     if user == current_user.username:  # type: ignore
         return flask.redirect(flask.url_for("auth.delete"))
 
-    if (usr := models.User.query.filter_by(username=user).first()) is None:  # type: ignore
-        flask.abort(404)
+    usr: t.Optional[models.User] = models.User.query.filter_by(
+        username=user
+    ).first_or_404()
 
     return flask.render_template(
         "delete.j2",
@@ -111,14 +108,14 @@ def delete_user(user: str) -> t.Union[str, Response]:
     """delete a user"""
 
     sure: t.Optional[str] = flask.request.form.get("sure")
-    usr: t.Optional[models.User]
 
     if not sure:
         flask.flash("account not deleted", "info")
         return flask.redirect(flask.url_for("admin.index"))
 
-    if (usr := models.User.query.filter_by(username=user).first()) is None:  # type: ignore
-        flask.abort(404)
+    usr: t.Optional[models.User] = models.User.query.filter_by(
+        username=user
+    ).first_or_404()
 
     if not usr.delete_user():  # type: ignore
         flask.flash("failed to delete account", "error")

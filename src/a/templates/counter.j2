@@ -1,0 +1,88 @@
+{% extends "base.j2" %}
+
+{% block title %}Counter{% endblock %}
+
+{% block description %}manage counters{% endblock %}
+
+{% block body %}
+<h1>counters manager</h1>
+
+<h2>create a new counter</h2>
+<form method="POST">
+    <fieldset>
+        <legend>create a new counter</legend>
+
+        <div class="form-group">
+            <label for="name">name</label>
+            <input required type="text" maxlength="{{ name_len }}" id="name" minlength="1" name="name" placeholder="name of the counter" />
+        </div>
+
+        <div class="form-group">
+            <label for="init">initial count</label>
+            <input required type="number" inputmode="numeric" id="init" minlength="1" name="init" placeholder="initial value of the counter" value="0" />
+        </div>
+
+        <div id=captcha class="captcha">
+            {% if c is not none %}
+            {{ c.image() }} {{ c.audio() }}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="code">CAPTCHA</label>
+            <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
+        </div>
+
+        <button type="submit">create</button>
+    </fieldset>
+</form>
+{% include "captcha.j2" %}
+
+{% if counters %}
+<h2>your counters</h2>
+<ul>
+    {% for counter in counters %}
+    {% set url = "@" ~ current_user.username ~ '/' ~ counter.id %}
+
+    {% set txt = url ~ ".txt" %}
+    {% set svg = url ~ ".svg" %}
+
+    <li>
+        <a href="{{ url }}">{{ counter.name | escape }}</a> | <code>{{ counter.count }}</code> for <code>{{ counter.origins | escape }}</code>,
+        active since <date datetime="{{ counter.active }}">{{ counter.active }} GMT</date>
+        ( increment formats :
+        <a target="_blank" href="{{ txt }}">txt</a>,
+        <a target="_blank" href="{{ svg }}">svg</a>
+        )
+
+        <details>
+            <summary>show embed code</summary>
+
+            <ul>
+                <li>
+                    txt : <code>&lt;span id=visitors&gt;visitor count&lt;/span&gt;&lt;script&gt;let _V=document.getElementById("visitors");fetch("{{ rurl }}{{ txt }}").then(r=&gt;r.text()).then(t=&gt;_V.innerText=t).catch(e=&gt;_V.innerText=e)&lt;/script&gt;</code>
+                </li>
+                <li>
+                    svg : <code>&lt;img id=visitors src="{{ rurl }}{{ svg }}" style="display:inline;height:1em;vertical-align:top" alt="visitor count" /&gt;</code>
+
+                    <ul>
+                        <li>string <code>fill</code> GET argument is the text colour ( <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/fill" target="_blank">fill</a> ), by default <code>#fff</code> ( white )</li>
+                        <li>string <code>font</code> GET argument is the text font ( <a href="https://developer.mozilla.org/en-US/docs/Web/SVG/Attribute/font-family" target="_blank">font</a> ), by default <code>sans-serif</code></li>
+                        <li>float <code>size</code> GET argument is text font size in pixels, by default <code>16</code></li>
+                        <li>float <code>baseline</code> GET argument is the baseline of the text in pixels, <code>0</code> being the bottom most part, by default <code>1</code></li>
+                        <li>float <code>ratio</code> GET argument defines the character ratio, by default <code>1</code>, for monospace it's usually <code>2</code></li>
+                        <li>float <code>padding</code> GET argument defines the character padding in `ch` unit, by default <code>1 / ratio</code></li>
+                    </ul>
+
+                    example custom url :
+                    <a href="{{ svg }}?fill=black&font=monospace&ratio=2" target="_blank">
+                        {{ rurl }}{{ svg }}?fill=black&amp;font=monospace&amp;ratio=2
+                    </a>
+                </li>
+            </ul>
+        </details>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

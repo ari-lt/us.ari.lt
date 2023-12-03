@@ -4,10 +4,10 @@
 
 from typing import Any
 
-from flask import Blueprint
+from flask import Blueprint, Response
 
 from .const import Role
-from .util import require_role_route
+from .util import make_api, require_role_route
 
 
 class Bp(Blueprint):
@@ -26,5 +26,15 @@ class Bp(Blueprint):
         @require_role_route(role)
         def _() -> None:
             pass
+
+        return self
+
+    def set_api(self) -> "Bp":
+        """disable cors and cache"""
+
+        @self.after_request  # type: ignore
+        def _(response: Response) -> Response:
+            """disable cache"""
+            return make_api(response)
 
         return self
