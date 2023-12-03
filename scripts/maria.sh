@@ -31,9 +31,15 @@ main() {
 
     systemctl stop mariadb >/dev/null
 
+    if [ -d /etc/my.cnf.d/ ]; then
+        cnf=/etc/my.cnf.d
+    else
+        cnf=/etc/mysql/conf.d
+    fi
+
     cat >"$1" <<EOF
 [client-server]
-!includedir /etc/my.cnf.d
+!includedir $cnf
 
 [mysqld]
 bind-address = 127.0.0.1
