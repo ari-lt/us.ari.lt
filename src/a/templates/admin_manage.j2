@@ -1,0 +1,14 @@
+{% extends "base.j2" %}
+
+{% block title %}Admin -&gt; Manage{% endblock %}
+
+{% block description %}admin pannel for managing{% endblock %}
+
+{% block body %}
+<h1>manage user @{{ current_user.username | escape }}</h1>
+
+<ul>
+    <li><a href="{{ rurl }}/change">change base info</a></li>
+    <li><a href="{{ rurl }}/counters">manage counters</a></li>
+</ul>
+{% endblock %}

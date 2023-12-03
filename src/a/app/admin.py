@@ -25,9 +25,30 @@ def index() -> str:
 
 
 @admin.get("/manage/@<string:user>")
+@admin.get("/manage/@<string:user>/")
 @util.require_role_route(const.Role.mod)
 def manage(user: str) -> t.Union[str, Response]:
     """manage user"""
+
+    if user == current_user.username:  # type: ignore
+        return flask.redirect(flask.url_for("auth.manage"))
+
+    usr: t.Optional[models.User] = models.User.query.filter_by(
+        username=user
+    ).first_or_404()
+
+    return flask.render_template(
+        "admin_manage.j2",
+        current_user=usr,
+        admin=current_user,
+        c=util.jscaptcha(),
+    )
+
+
+@admin.get("/manage/@<string:user>/change")
+@util.require_role_route(const.Role.mod)
+def change(user: str) -> t.Union[str, Response]:
+    """change user"""
 
     if user == current_user.username:  # type: ignore
         return flask.redirect(flask.url_for("auth.manage"))
@@ -44,7 +65,7 @@ def manage(user: str) -> t.Union[str, Response]:
     )
 
 
-@admin.post("/manage/@<string:user>")
+@admin.post("/manage/@<string:user>/change")
 @util.require_role_route(const.Role.mod)
 @util.captcha
 def manage_user(user: str) -> Response:
@@ -53,9 +74,7 @@ def manage_user(user: str) -> Response:
     if user == current_user.username:  # type: ignore
         flask.abort(400)
 
-    usr: t.Optional[models.User] = models.User.query.filter_by(
-        username=user
-    ).first_or_404()
+    usr: models.User = models.User.query.filter_by(username=user).first_or_404()
 
     password: t.Optional[str] = flask.request.form.get("password")
     role: t.Optional[str] = flask.request.form.get("role")
