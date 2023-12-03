@@ -79,6 +79,8 @@ export MARIA_PASS="$user_pw"
 EOF
 
     echo "root pw : $gen_root_pw" >&2
+
+    systemctl restart mariadb >/dev/null
 }
 
 main "$@"
