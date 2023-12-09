@@ -139,6 +139,8 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
 
     app.config["CAPTCHA_PEPPER_FILE"] = "captcha.key"
     app.config["CAPTCHA_EXPIRY"] = 60 * 10  # 10 minutes
+    app.config["CAPTCHA_CHARSET"] = "abdefghmnqrtyzABDEFGHLMNRTYZ2345689#@%?!"
+    app.config["CAPTCHA_RANGE"] = (4, 6)
 
     app.config["SESSION_COOKIE_SAMESITE"] = "strict"
     app.config["SESSION_COOKIE_SECURE"] = True
