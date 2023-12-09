@@ -1,10 +1,10 @@
 {% extends "base.j2" %}
 
-{% block title %}Counter{% endblock %}
+{% block title %}Counter -&gt; Manage{% endblock %}
 
 {% block head %}<link rel="stylesheet" href="{{ url_for("static", filename="css/sign.css")}}" />{% endblock %}
 
-{% block description %}manage counters{% endblock %}
+{% block description %}manage counter{% endblock %}
 
 {% block body %}
 <h1>manage counter {{ counter.name | escape }}</h1>
@@ -42,5 +42,8 @@
         <button type="submit">commit</button>
     </fieldset>
 </form>
+
+<p>or you can <a href="{{ counter.id }}/delete">delete this counter</a></p>
+
 {% include "captcha.j2" %}
 {% endblock %}

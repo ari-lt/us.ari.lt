@@ -101,6 +101,78 @@ def manage_user(user: str) -> Response:
     return flask.redirect(flask.url_for("admin.index"))
 
 
+@admin.get("/manage/@<string:user>/counters")
+@util.require_role_route(const.Role.admin)
+def counters(user: str) -> t.Union[str, Response]:
+    """change user"""
+
+    if user == current_user.username:  # type: ignore
+        return flask.redirect(flask.url_for("counter.index"))
+
+    usr: t.Optional[models.User] = models.User.query.filter_by(
+        username=user
+    ).first_or_404()
+
+    return flask.render_template(
+        "counter.j2",
+        current_user=usr,
+        admin=current_user,
+        counters=models.Counter.query.filter_by(username=usr.username).all(),  # type: ignore
+        c=util.jscaptcha(),
+    )
+
+
+@admin.post("/manage/@<string:user>/counters")
+@util.captcha
+@util.require_role_route(const.Role.mod)
+def create_counter(user: str) -> t.Union[flask.Response, Response]:
+    """create a counter"""
+
+    if user == current_user.username:  # type: ignore
+        return flask.redirect(flask.url_for("counter.index"))
+
+    name: t.Optional[str] = flask.request.form.get("name")
+    init: t.Optional[str] = flask.request.form.get("init")
+    origins: t.Optional[str] = flask.request.form.get("origins")
+
+    if not name or init is None:
+        flask.abort(400)
+
+    usr: t.Optional[models.User] = models.User.query.filter_by(
+        username=user
+    ).first_or_404()
+
+    try:
+        init_int: int = int(init) % const.HUGEINT_MAX
+    except ValueError:
+        flask.abort(400)
+
+    try:
+        counter: models.Counter = models.Counter(name, usr.username, init_int, origins)  # type: ignore
+        usr.counters.append(counter)  # type: ignore
+        models.db.session.commit()
+    except Exception:
+        flask.flash("unable to create a counter")
+        flask.abort(500)
+
+    return flask.redirect("counters/" + counter.id)  # type: ignore
+
+
+@admin.get("/manage/@<string:user>/counters/<string:id>")
+@util.require_role_route(const.Role.mod)
+def manage_counter_page(user: str, id: str) -> t.Union[str, Response]:
+    """manage counter page"""
+
+    if user == current_user.username:  # type: ignore
+        return flask.redirect(flask.url_for("counter.index"))
+
+    return flask.render_template(
+        "counter_manage.j2",
+        counter=models.Counter.query.filter_by(username=user, id=id).first_or_404(),  # type: ignore
+        c=util.jscaptcha(),
+    )
+
+
 @admin.get("/delete/@<string:user>")
 @util.require_role_route(const.Role.admin)
 def delete(user: str) -> t.Union[str, Response]:
@@ -125,6 +197,9 @@ def delete(user: str) -> t.Union[str, Response]:
 @util.captcha
 def delete_user(user: str) -> t.Union[str, Response]:
     """delete a user"""
+
+    if user == current_user.username:  # type: ignore
+        return flask.redirect(flask.url_for("auth.delete"))
 
     sure: t.Optional[str] = flask.request.form.get("sure")
 

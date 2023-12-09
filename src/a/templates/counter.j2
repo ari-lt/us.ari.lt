@@ -5,7 +5,7 @@
 {% block description %}manage counters{% endblock %}
 
 {% block body %}
-<h1>counters manager</h1>
+<h1>counters manager for {{ current_user.username | escape }}</h1>
 
 <h2>create a new counter</h2>
 <form method="POST">
@@ -44,10 +44,15 @@
 {% include "captcha.j2" %}
 
 {% if counters %}
-<h2>your counters</h2>
+<h2>{{ current_user.username }}'s counters</h2>
 <ul>
     {% for counter in counters %}
+
+    {% if admin %}
+    {% set url = 'counters/' ~ counter.id %}
+    {% else %}
     {% set url = "@" ~ current_user.username ~ '/' ~ counter.id %}
+    {% endif %}
 
     {% set txt = url ~ ".txt" %}
     {% set svg = url ~ ".svg" %}
@@ -55,6 +60,8 @@
     <li>
         <a href="{{ url }}">{{ counter.name | escape }}</a> | <code>{{ counter.count }}</code> for <code>{{ counter.origins | escape }}</code>,
         active since <date datetime="{{ counter.active }}">{{ counter.active }} GMT</date>
+
+        {% if not admin %}
         ( increment formats :
         <a target="_blank" href="{{ txt }}">txt</a>,
         <a target="_blank" href="{{ svg }}">svg</a>
@@ -86,6 +93,7 @@
                 </li>
             </ul>
         </details>
+        {% endif %}
     </li>
     {% endfor %}
 </ul>
