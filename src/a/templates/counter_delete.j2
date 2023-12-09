@@ -1,0 +1,39 @@
+{% extends "base.j2" %}
+
+{% block title %}Counter -&gt; Manage -&gt; Delete{% endblock %}
+
+{% block head %}<link rel="stylesheet" href="{{ url_for("static", filename="css/sign.css")}}" />{% endblock %}
+
+{% block description %}delete counter {{ counter.name | escape }}{% endblock %}
+
+{% block body %}
+<h1>delete counter {{ counter.name | escape }}</h1>
+
+<form method="POST">
+    <fieldset>
+        <legend>delete counter</legend>
+
+        <div class="form-group">
+            <label for="agree">i am sure that i want to delete thisc counter</label>
+            <input required type="checkbox" id="agree" name="agree" />
+        </div>
+
+        <div id=captcha class="captcha">
+            {% if c is not none %}
+            {{ c.image() }} {{ c.audio() }}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="code">CAPTCHA</label>
+            <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
+        </div>
+
+        <button type="submit">delete</button>
+    </fieldset>
+</form>
+
+<p>or you can <a href="...">manage and keep this counter</a></p>
+
+{% include "captcha.j2" %}
+{% endblock %}

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """visitors counter"""
 
+import re
 import typing as t
 
 import flask
@@ -118,9 +119,22 @@ def counter_text(user: str, id: str) -> flask.Response:
 
     counter: models.Counter = models.Counter.query.filter_by(username=user, id=id).first_or_404()  # type: ignore
 
-    response: flask.Response = util.make_api(flask.Response(str(counter.inc_or_404().count), mimetype="text/plain"))  # type: ignore
-    response.headers["Access-Control-Allow-Origin"] = counter.origins
-    response.headers["Access-Control-Allow-Methods"] = "GET"
+    response: flask.Response
+
+    origin: t.Optional[str] = util.get_origin()
+
+    try:
+        if origin is not None and re.fullmatch(counter.origins, origin, re.I):
+            response = util.make_api(flask.Response(str(counter.inc_or_404().count), mimetype="text/plain"))  # type: ignore
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Methods"] = "GET"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        else:
+            response = util.make_api(flask.Response("CORS"), False)
+
+        response.headers["Vary"] = "Origin"
+    except Exception:
+        flask.abort(500)
 
     return response
 
@@ -141,19 +155,70 @@ def counter_svg(user: str, id: str) -> flask.Response:
             pass
 
     counter: models.Counter = models.Counter.query.filter_by(username=user, id=id).first_or_404()  # type: ignore
+    response: flask.Response
 
-    response: flask.Response = util.make_api(
-        flask.Response(
-            counter.inc_or_404().to_svg(  # type: ignore
-                fill=fill,
-                font=font,
-                **floats,
-            ),
-            mimetype="image/svg+xml",
-        )
-    )
+    origin: t.Optional[str] = util.get_origin()
 
-    response.headers["Access-Control-Allow-Origin"] = counter.origins
-    response.headers["Access-Control-Allow-Methods"] = "GET"
+    try:
+        if origin is not None and re.fullmatch(counter.origins, origin, re.I):
+            response: flask.Response = util.make_api(
+                flask.Response(
+                    counter.inc_or_404().to_svg(  # type: ignore
+                        fill=fill,
+                        font=font,
+                        **floats,
+                    ),
+                    mimetype="image/svg+xml",
+                )
+            )
+
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Methods"] = "GET"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        else:
+            response = util.make_api(flask.Response("CORS"), False)
+
+        response.headers["Vary"] = "Origin"
+    except Exception:
+        flask.abort(500)
 
     return response
+
+
+@counter.get("/@<string:user>/<string:id>/delete")
+@login_required  # type: ignore
+def delete_counter_page(user: str, id: str) -> str:
+    """delete counter page"""
+
+    if user != current_user.username:  # type: ignore
+        flask.abort(401)
+
+    counter: models.Counter = models.Counter.query.filter_by(username=user, id=id).first_or_404()  # type: ignore
+
+    return flask.render_template(
+        "counter_delete.j2",
+        counter=counter,
+        c=util.jscaptcha(),
+    )
+
+
+@counter.post("/@<string:user>/<string:id>/delete")
+@util.captcha
+@login_required  # type: ignore
+def delete_counter(user: str, id: str) -> Response:
+    """delete counter"""
+
+    if user != current_user.username:  # type: ignore
+        flask.abort(401)
+
+    try:
+        models.db.session.delete(models.Counter.query.filter_by(username=user, id=id).first_or_404())  # type: ignore
+        models.db.session.commit()
+        flask.flash("deleted the counter")
+    except Exception as e:
+        models.db.session.rollback()
+        flask.current_app.log_exception(e)
+        flask.flash("failed to delete the counter")
+        flask.abort(500)
+
+    return flask.redirect(flask.url_for("counter.index"))

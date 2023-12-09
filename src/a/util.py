@@ -3,12 +3,12 @@
 """utils"""
 
 from functools import wraps
-from typing import Any, Callable, NoReturn, Optional
+from typing import Any, Callable, NoReturn, Optional, Tuple
 
 import flask
 from flask_login import current_user, login_required  # type: ignore
 
-from . import const
+from . import const, crypt, models
 from .c import OggCaptchaGenerator, c
 
 
@@ -108,15 +108,17 @@ def captcha(fn: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-def make_api(response: flask.Response) -> flask.Response:
+def make_api(response: flask.Response, cors: bool = True) -> flask.Response:
     """make api endpoint ( disables cors and caching )"""
 
     response.headers["Expires"] = "Thu, 01 Jan 1970 00:00:00 GMT"
     response.headers[
         "Cache-Control"
     ] = "max-age=0, no-cache, must-revalidate, proxy-revalidate"
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST"
+
+    if cors:
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
 
     return response
 
@@ -130,3 +132,84 @@ def api(fn: Callable[..., Any]) -> Callable[..., Any]:
         return make_api(flask.make_response(fn(*args, **kwargs)))
 
     return wrapper
+
+
+def clear_admin() -> None:
+    """clear admin"""
+
+    flask.session.pop("__admin__", None)
+
+
+def is_admin() -> bool:
+    """checks if user is admin"""
+
+    if "__admin__" not in flask.session:
+        return False
+
+    try:
+        if len(flask.session["__admin__"]) != 3:
+            clear_admin()
+            return False
+    except Exception:
+        return False
+
+    admin: bool = models.argon2.check_password_hash(  # type: ignore
+        flask.session["__admin__"][0],
+        flask.current_app.config["ADMIN_KEY"] + flask.current_app.config["SECRET_KEY"],
+    )
+
+    if admin:
+        return admin
+    else:
+        clear_admin()
+        return False
+
+
+def set_admin() -> None:
+    """set admin session"""
+
+    flask.session["__admin__"] = (
+        models.argon2.generate_password_hash(flask.current_app.config["ADMIN_KEY"] + flask.current_app.config["SECRET_KEY"]),  # type: ignore
+        crypt.encrypt_aes(
+            current_user.username,  # type: ignore
+            flask.current_app.config["SECRET_KEY"],
+            flask.current_app.config["ADMIN_KEY"],
+        ),
+        flask.current_app.config["REMEMBER_COOKIE_NAME"] in flask.request.cookies,
+    )
+
+
+def get_admin() -> Optional[Tuple[str, bool]]:
+    """get admin username if available"""
+
+    if is_admin():
+        try:
+            remember: bool = flask.session["__admin__"][2]
+        except Exception:
+            remember = False
+
+        user: str = crypt.decrypt_aes(
+            flask.session["__admin__"][1],
+            flask.current_app.config["SECRET_KEY"],
+            flask.current_app.config["ADMIN_KEY"],
+        )
+
+        return user, remember
+
+    return None
+
+
+def get_admin_user() -> Optional[models.User]:
+    """get admin user"""
+
+    admin: Optional[Tuple[str, bool]] = get_admin()
+
+    if admin:
+        return models.User.query.filter_by(username=admin[0]).first_or_404()
+
+    return None
+
+
+def get_origin() -> Optional[str]:
+    """get origin"""
+    return flask.request.headers.get("Origin", flask.request.referrer)

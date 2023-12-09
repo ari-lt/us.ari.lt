@@ -6,6 +6,7 @@ import base64
 import os
 import re
 import secrets
+from datetime import timedelta
 import time
 from functools import lru_cache, partial
 from typing import Any, Dict, Optional, Tuple
@@ -19,7 +20,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Rule
 
 from . import const, crypt
-from .util import require_role
+from .util import require_role, is_admin
 
 
 def random_cookie_salt() -> str:
@@ -132,6 +133,15 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     with open("secret.key", "rb") as fp:
         app.config["SECRET_KEY"] = fp.read()
 
+    # admin
+
+    if not os.path.exists("admin.key"):
+        with open("admin.key", "wb") as fp:
+            fp.write(secrets.SystemRandom().randbytes(2**14))
+
+    with open("admin.key", "rb") as fp:
+        app.config["ADMIN_KEY"] = fp.read()
+
     app.config["PREFERRED_URL_SCHEME"] = "https"
     app.config["DOMAIN"] = "us.ari.lt"
 
@@ -145,6 +155,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     app.config["SESSION_COOKIE_SAMESITE"] = "strict"
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=4)
 
     app.config["REMEMBER_COOKIE_NAME"] = "authorization"
     app.config["REMEMBER_COOKIE_SAMESITE"] = "strict"
@@ -211,7 +222,6 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Content-Security-Policy"] = "upgrade-insecure-requests"
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
-        response.headers["Referrer-Policy"] = "no-referrer"
 
         if response.direct_passthrough:
             return response
@@ -269,6 +279,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
             "bio_len": const.USERNAME_LEN,
             "origins_len": const.COUNTER_ORIGINS_LEN,
             "rurl": flask.request.host_url + flask.request.path[1:],
+            "is_admin": is_admin,
         }
 
     from .c import c

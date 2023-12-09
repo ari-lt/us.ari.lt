@@ -16,25 +16,28 @@ RAND: secrets.SystemRandom = secrets.SystemRandom()
 DEFAULT_BACKEND: t.Final[t.Any] = default_backend()
 
 HASH_ALGO: hashes.HashAlgorithm = hashes.SHA3_512()
-KDF_PASSES: int = 96000
+
+KDF_PASSES: int = 128000
+KEY_SIZE: int = 32
 
 
-def encrypt_aes(
-    data: str,
-    password: bytes,
-    salt: str,
-) -> str:
-    """aes encryption"""
-
-    key: bytes = PBKDF2HMAC(
+def derive_key(password: bytes, salt: bytes) -> bytes:
+    """derive key"""
+    return PBKDF2HMAC(
         algorithm=HASH_ALGO,
         length=32,
-        salt=base64.b85decode(salt.encode("ascii")),
+        salt=salt,
         iterations=KDF_PASSES,
         backend=DEFAULT_BACKEND,
     ).derive(password)
 
+
+def encrypt_aes(data: str, password: bytes, salt: bytes) -> str:
+    """aes encryption"""
+
     iv: bytes = RAND.randbytes(16)
+
+    key: bytes = derive_key(password, salt)
 
     encryptor: CipherContext = Cipher(
         algorithms.AES(key),
@@ -44,33 +47,22 @@ def encrypt_aes(
 
     padder: padding.PaddingContext = padding.PKCS7(128).padder()
 
-    enc_data: bytes = (
+    return base64.b85encode(
         iv
         + encryptor.update(padder.update(data.encode("ascii")) + padder.finalize())
         + encryptor.finalize()
-    )
-
-    return base64.b85encode(enc_data).decode("ascii")
+    ).decode("ascii")
 
 
-def decrypt_aes(
-    data: str,
-    password: bytes,
-    salt: str,
-) -> str:
+def decrypt_aes(data: str, password: bytes, salt: bytes) -> str:
     """aes decryption"""
 
-    enc_data: bytes = base64.b85decode(data.encode("ascii"))
+    e_data: bytes = base64.b85decode(data)
 
-    key: bytes = PBKDF2HMAC(
-        algorithm=HASH_ALGO,
-        length=32,
-        salt=base64.b85decode(salt.encode("ascii")),
-        iterations=KDF_PASSES,
-        backend=DEFAULT_BACKEND,
-    ).derive(password)
+    iv: bytes = e_data[:16]
+    ct: bytes = e_data[16:]
 
-    iv: bytes = enc_data[:16]
+    key: bytes = derive_key(password, salt)
 
     decryptor: CipherContext = Cipher(
         algorithms.AES(key),
@@ -78,11 +70,8 @@ def decrypt_aes(
         backend=DEFAULT_BACKEND,
     ).decryptor()
 
+    pt: bytes = decryptor.update(ct) + decryptor.finalize()
+
     unpadder: padding.PaddingContext = padding.PKCS7(128).unpadder()
 
-    dec_data: bytes = (
-        unpadder.update(decryptor.update(enc_data[16:]) + decryptor.finalize())
-        + unpadder.finalize()
-    )
-
-    return dec_data.decode("ascii")
+    return (unpadder.update(pt) + unpadder.finalize()).decode("ascii")

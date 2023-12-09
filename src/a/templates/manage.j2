@@ -12,31 +12,39 @@
     <fieldset>
         <legend>info</legend>
 
-        {% if admin is not defined %}
+        {% if admin is none %}
         <div class="form-group">
             <label for="password_old">old password</label>
             <input inputmode="numeric" type="password" minlength="1" id="password_old" name="password_old" placeholder="old password ( required on password change )" />
         </div>
+        {% endif %}
 
         <div class="form-group">
             <label for="pin">PIN</label>
-            <input type="password" maxlength="{{ pin_len }}" minlength="1" id="pin" name="pin" placeholder="pin ( required on password change )" />
-        </div>
+            <input type="password" maxlength="{{ pin_len }}" minlength="1" id="pin" name="pin"
+        {% if admin is none %}
+            placeholder="pin ( required on password change )"
+        {% else %}
+            placeholder="pin ( pin change )"
         {% endif %}
+            />
+        </div>
 
-        {% if admin is not defined %}
         <div class="form-group">
+        {% if admin is none %}
             <label for="password">new password</label>
-            <input oninput="document.getElementById('password_old').required=document.getElementById('pin').required=(!!this.value)" type="password" minlength="1" id="password" name="password" placeholder="new password ( password change )" />
-        </div>
-        {% elif require_role(Role.admin) %}
-        <div class="form-group">
-            <label for="password"> new password</label>
-            <input minlength="1" id="password" name="password" placeholder="new password ( password change )" />
-        </div>
+        {% else %}
+            <label for="password">password</label>
         {% endif %}
 
-        {% if admin is defined %}
+            <input
+        {% if admin is none %}
+            oninput="document.getElementById('password_old').required=document.getElementById('pin').required=(!!this.value)"
+        {% endif %}
+            type="password" minlength="1" id="password" name="password" placeholder="new password ( password change )" />
+        </div>
+
+        {% if admin is not none %}
         <div class="form-group">
             <label for="role">role</label>
             <select id="role" name="role">

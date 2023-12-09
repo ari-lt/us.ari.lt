@@ -3,6 +3,7 @@ flask-ishuman
 flask-login
 flask-sqlalchemy
 flask-argon2
+argon2-cffi
 web-mini
 werkzeug
 pydub

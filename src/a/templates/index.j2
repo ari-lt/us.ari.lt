@@ -15,6 +15,14 @@
 <a href="{{ url_for("auth.signout") }}">sign out</a>
 <a href="{{ url_for("auth.manage") }}">manage user</a>
 <a href="{{ url_for("counter.index") }}">counters management</a>
+
+<p>
+    currently logged in as {{ current_user.username | escape }}
+</p>
+
+{% if is_admin() %}
+<a href="{{ url_for("admin.restore") }}">restore session</a>
+{% endif %}
 {% endif %}
 
 {% if require_role(Role.mod) %}

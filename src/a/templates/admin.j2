@@ -12,10 +12,7 @@
 <ul>
     {% for user in users %}
     <li>
-        {{ user.role.name }} <a href="manage/@{{ user.username | urlencode }}">{{ user.username | escape }}</a>
-        {% if require_role(Role.admin) %}
-        ( <a href="delete/@{{ user.username | urlencode }}">delete</a> )
-        {% endif %}
+        {{ user.role.name }} <a href="@{{ user.username | urlencode }}">{{ user.username | escape }}</a>
     </li>
     {% endfor %}
 </ul>

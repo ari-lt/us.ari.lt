@@ -25,19 +25,19 @@ HUGEINT_MAX: Final[int] = (10**65) - 1
 
 
 class Role(Enum):
-    """user roles"""
+    """user roles
 
-    user = auto()  # user signed up
-    trusted = (
-        auto()
-    )  # user has been trusted by an owner, makes limits lighter and opens up more services
-    mod = (
-        auto()
-    )  # anything trusted can do, but mods can also delete and modify content and statuses, mark users as unstrusted
-    admin = (
-        auto()
-    )  # everything a mod can do, but they can also delete users ( which in turn deletes all trace of them too )
-    owner = auto()  # can literally do anything
+    users manage their usage of resources and their posted content, and are the highest level contributors
+    trusted users manage their content and worry less about usage
+    moderators manage their content and others' content
+    administrators manage their content, others' content and users' accounts
+    owners manage their content, others' content and users' accounts, backend, system administration and are the lowest level contributors"""
+
+    user = auto()
+    trusted = auto()
+    mod = auto()
+    admin = auto()
+    owner = auto()
 
     @classmethod
     def json(cls) -> Dict[str, int]:

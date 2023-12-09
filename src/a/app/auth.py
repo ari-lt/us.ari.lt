@@ -11,7 +11,7 @@ from flask_login import login_required  # type: ignore
 from flask_login import current_user, login_user, logout_user  # type: ignore
 from werkzeug.wrappers import Response
 
-from .. import models, util
+from .. import const, models, util
 from ..c import audio as gen_audio_captcha
 from ..c import c
 from ..routing import Bp
@@ -90,6 +90,105 @@ def manage_page() -> str:
     return flask.render_template(
         "manage.j2",
         c=util.jscaptcha(),
+        admin=util.get_admin_user(),
+    )
+
+
+def manage_user_nonadmin() -> t.Optional[t.Tuple[str, int]]:
+    """manage user as non-admin"""
+
+    old_password: t.Optional[str] = flask.request.form.get("password_old")
+    new_password: t.Optional[str] = flask.request.form.get("password")
+    pin: t.Optional[str] = flask.request.form.get("pin")
+    bio: t.Optional[str] = flask.request.form.get("bio")
+
+    if old_password and new_password and pin:
+        if not (
+            current_user.check_password(new_password)  # type: ignore
+            and current_user.verify_pin(pin)  # type: ignore
+            and current_user.verify_password(old_password)  # type: ignore
+        ):
+            return (
+                util.flash_render(
+                    "invalid password( s ) or PIN",
+                    "manage.j2",
+                    admin=util.get_admin_user(),
+                ),
+                401,
+            )
+
+        current_user.set_password(new_password)  # type: ignore
+
+    if bio is not None:
+        current_user.bio = bio  # type: ignore
+
+
+def manage_user_admin() -> t.Optional[t.Tuple[str, int]]:
+    """manage user as admin"""
+
+    pin: t.Optional[str] = flask.request.form.get("pin")
+    password: t.Optional[str] = flask.request.form.get("password")
+    role: t.Optional[str] = flask.request.form.get("role")
+    bio: t.Optional[str] = flask.request.form.get("bio")
+
+    if role is not None:
+        try:
+            current_user.role = const.Role(int(role))  # type: ignore
+        except Exception:
+            return (
+                util.flash_render(
+                    "failed to update role",
+                    "manage.j2",
+                    admin=util.get_admin_user(),
+                ),
+                400,
+            )
+
+    if pin is not None and current_user.check_pin(pin):  # type: ignore
+        current_user.set_pin(pin)  # type: ignore
+
+    if password is not None and current_user.check_password(password):  # type: ignore
+        current_user.set_password(password)  # type: ignore
+
+    if bio is not None and current_user.check_bio(bio):  # type: ignore
+        current_user.bio = bio  # type: ignore
+
+
+@auth.post("/manage")
+@login_required
+@util.captcha
+def manage() -> t.Tuple[str, int]:
+    """manage current user"""
+
+    if util.is_admin():
+        fn: t.Callable[..., t.Optional[t.Tuple[str, int]]] = manage_user_admin
+    else:
+        fn = manage_user_nonadmin
+
+    if (ret := fn()) is not None:
+        return ret
+
+    try:
+        models.db.session.commit()
+    except Exception:
+        models.db.session.rollback()
+        return (
+            util.flash_render(
+                "invalid request / server error",
+                "manage.j2",
+                admin=util.get_admin_user(),
+            ),
+            500,
+        )
+
+    return (
+        util.flash_render(
+            "user updated",
+            "manage.j2",
+            level="info",
+            admin=util.get_admin_user(),
+        ),
+        200,
     )
 
 
@@ -148,58 +247,6 @@ def signin() -> t.Union[t.Tuple[str, int], Response]:
     login_user(user, bool(remember))
 
     return flask.redirect("/")
-
-
-@auth.post("/manage")
-@login_required
-@util.captcha
-def manage() -> t.Tuple[str, int]:
-    """manage current user"""
-
-    old_password: t.Optional[str] = flask.request.form.get("password_old")
-    new_password: t.Optional[str] = flask.request.form.get("password")
-    pin: t.Optional[str] = flask.request.form.get("pin")
-    bio: t.Optional[str] = flask.request.form.get("bio")
-
-    if old_password and new_password and pin:
-        if not (
-            current_user.check_password(new_password)  # type: ignore
-            and current_user.verify_pin(pin)  # type: ignore
-            and current_user.verify_password(old_password)  # type: ignore
-        ):
-            return (
-                util.flash_render(
-                    "invalid password( s ) or PIN",
-                    "manage.j2",
-                ),
-                401,
-            )
-
-        current_user.set_password(new_password)  # type: ignore
-
-    if bio is not None:
-        current_user.bio = bio  # type: ignore
-
-    try:
-        models.db.session.commit()
-    except Exception:
-        models.db.session.rollback()
-        return (
-            util.flash_render(
-                "invalid request / server error",
-                "manage.j2",
-            ),
-            500,
-        )
-
-    return (
-        util.flash_render(
-            "user updated",
-            "manage.j2",
-            level="info",
-        ),
-        200,
-    )
 
 
 @auth.get("/delete")

@@ -113,7 +113,7 @@ class Counter(db.Model):
     )
     origins: str = db.Column(
         db.String(const.COUNTER_ORIGINS_LEN),
-        default="*",
+        default=".*",
         nullable=False,
     )
     active: DateTime = db.Column(
@@ -127,7 +127,7 @@ class Counter(db.Model):
         name: str,
         username: str,
         count: int = 0,
-        origins: str = "*",
+        origins: str = ".*",
     ) -> None:
         assert len(self.query.filter_by(username=username).all()) <= const.COUNTERS_LIMIT, "too many counters"  # type: ignore
         assert count <= const.HUGEINT_MAX, "count out of range"
@@ -328,19 +328,23 @@ class User(UserMixin, db.Model):
     )
 
     def __init__(self, username: str, password: str, pin: str) -> None:
-        assert self.check_pin(pin), "invalid PIN"
         assert self.check_username(username), "invalid username"
-        assert self.check_password(password), "invalid password"
 
         self.username: str = username
         self.bio: str = ""
         self.set_password(password)
-        self.pin_hash: str = hash_data(pin)
+        self.set_pin(pin)
         self.role: const.Role = const.Role.user
 
     def set_password(self, password: str) -> None:
         """set password"""
+        assert self.check_password(password), "invalid password"
         self.password_hash: str = hash_data(password)
+
+    def set_pin(self, pin: str) -> None:
+        """set pin"""
+        assert self.check_pin(pin), "invalid PIN"
+        self.pin_hash: str = hash_data(pin)
 
     @staticmethod
     def check_username(username: str) -> bool:
@@ -360,6 +364,11 @@ class User(UserMixin, db.Model):
     def check_pin(pin: str) -> bool:
         """checks if username is valid"""
         return bool(pin) and len(pin) == const.PIN_LEN
+
+    @staticmethod
+    def check_bio(bio: str) -> bool:
+        """checks if username is valid"""
+        return len(bio) <= const.BIO_LEN
 
     def verify_password(self, password: str) -> bool:
         """is password valid"""
