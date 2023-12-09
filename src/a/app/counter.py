@@ -31,6 +31,7 @@ def index() -> str:
 def create_counter() -> flask.Response:
     name: t.Optional[str] = flask.request.form.get("name")
     init: t.Optional[str] = flask.request.form.get("init")
+    origins: t.Optional[str] = flask.request.form.get("origins")
 
     if not name or init is None:
         flask.abort(400)
@@ -41,7 +42,7 @@ def create_counter() -> flask.Response:
         flask.abort(400)
 
     try:
-        counter: models.Counter = models.Counter(name, current_user.username, init_int)  # type: ignore
+        counter: models.Counter = models.Counter(name, current_user.username, init_int, origins)  # type: ignore
         current_user.counters.append(counter)  # type: ignore
         models.db.session.commit()
     except Exception:
@@ -55,6 +56,10 @@ def create_counter() -> flask.Response:
 @login_required  # type: ignore
 def manage_counter_page(user: str, id: str) -> str:
     """manage counter page"""
+
+    if user != current_user.username:  # type: ignore
+        flask.abort(401)
+
     return flask.render_template(
         "counter_manage.j2",
         counter=models.Counter.query.filter_by(username=user, id=id).first_or_404(),  # type: ignore

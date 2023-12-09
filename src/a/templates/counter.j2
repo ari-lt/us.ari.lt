@@ -18,6 +18,11 @@
         </div>
 
         <div class="form-group">
+            <label for="origins">origins</label>
+            <input required type="text" id="origins" minlength="1" maxlength="{{ origins_len }}" name="origins" placeholder="origins which can access this counter" value="*" />
+        </div>
+
+        <div class="form-group">
             <label for="init">initial count</label>
             <input required type="number" inputmode="numeric" id="init" minlength="1" name="init" placeholder="initial value of the counter" value="0" />
         </div>
