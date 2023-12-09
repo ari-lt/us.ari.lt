@@ -18,8 +18,8 @@
         </div>
 
         <div class="form-group">
-            <label for="origins">origins, <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin">docs</a>, in <a href="https://cheatography.com/davechild/cheat-sheets/regular-expressions/">regex syntax</a></label>
-            <input required type="text" id="origins" minlength="1" maxlength="{{ origins_len }}" name="origins" placeholder="origins which can access this counter" value=".*" />
+            <label for="origin">origin, <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin">docs</a></label>
+            <input required type="text" id="origin" minlength="1" maxlength="{{ origin_len }}" name="origin" placeholder="origin which can access this counter" value=".*" />
         </div>
 
         <div class="form-group">
@@ -53,7 +53,7 @@
     {% set svg = url ~ ".svg" %}
 
     <li>
-        <a href="{{ url }}">{{ counter.name | escape }}</a> | <code>{{ counter.count }}</code> for <code>{{ counter.origins | escape }}</code>,
+        <a href="{{ url }}">{{ counter.name | escape }}</a> | <code>{{ counter.count }}</code> for <code>{{ counter.origin | escape }}</code>,
         active since <date datetime="{{ counter.active }}">{{ counter.active }} GMT</date>
 
         ( increment formats :

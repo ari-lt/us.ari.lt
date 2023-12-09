@@ -19,8 +19,8 @@
         </div>
 
         <div class="form-group">
-            <label for="origins">origins</label>
-            <input required type="text" id="origins" minlength="1" maxlength="{{ origins_len }}" name="origins" placeholder="origins which can access this counter" value="{{ counter.origins | escape }}" />
+            <label for="origin">origin, <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Allow-Origin">docs</a></label>
+            <input required type="text" id="origin" minlength="1" maxlength="{{ origin_len }}" name="origin" placeholder="origin which can access this counter" value="{{ counter.origin | escape }}" />
         </div>
 
         <div class="form-group">

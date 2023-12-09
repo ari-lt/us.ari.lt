@@ -111,8 +111,8 @@ class Counter(db.Model):
         db.ForeignKey("user.username"),
         nullable=False,
     )
-    origins: str = db.Column(
-        db.String(const.COUNTER_ORIGINS_LEN),
+    origin: str = db.Column(
+        db.String(const.COUNTER_ORIGIN_LEN),
         default=".*",
         nullable=False,
     )
@@ -127,7 +127,7 @@ class Counter(db.Model):
         name: str,
         username: str,
         count: int = 0,
-        origins: str = ".*",
+        origin: str = ".*",
     ) -> None:
         assert len(self.query.filter_by(username=username).all()) <= const.COUNTERS_LIMIT, "too many counters"  # type: ignore
         assert count <= const.HUGEINT_MAX, "count out of range"
@@ -136,7 +136,7 @@ class Counter(db.Model):
         self.set_name(name)
         self.count: int = count
         self.username: str = username
-        self.set_origins(origins)
+        self.set_origin(origin)
 
     def set_name(self, name: str) -> "Counter":
         """set name"""
@@ -145,13 +145,13 @@ class Counter(db.Model):
         self.name = name
         return self
 
-    def set_origins(self, origins: str) -> "Counter":
-        """set origins"""
+    def set_origin(self, origin: str) -> "Counter":
+        """set origin"""
 
-        origins = origins.splitlines()[0].strip()
+        origin = origin.splitlines()[0].strip()
 
-        assert len(origins) <= const.COUNTER_ORIGINS_LEN, "name too long"
-        self.origins = origins
+        assert len(origin) <= const.COUNTER_ORIGIN_LEN, "name too long"
+        self.origin = origin
         return self
 
     def set_count(self, count: int) -> "Counter":

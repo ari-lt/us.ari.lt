@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """visitors counter"""
 
-import re
 import typing as t
 
 import flask
@@ -32,7 +31,7 @@ def index() -> str:
 def create_counter() -> flask.Response:
     name: t.Optional[str] = flask.request.form.get("name")
     init: t.Optional[str] = flask.request.form.get("init")
-    origins: t.Optional[str] = flask.request.form.get("origins")
+    origin: t.Optional[str] = flask.request.form.get("origin")
 
     if not name or init is None:
         flask.abort(400)
@@ -43,7 +42,7 @@ def create_counter() -> flask.Response:
         flask.abort(400)
 
     try:
-        counter: models.Counter = models.Counter(name, current_user.username, init_int, origins)  # type: ignore
+        counter: models.Counter = models.Counter(name, current_user.username, init_int, origin)  # type: ignore
         current_user.counters.append(counter)  # type: ignore
         models.db.session.commit()
     except Exception:
@@ -83,7 +82,7 @@ def manage_counter(user: str, id: str) -> Response:
 
     name: t.Optional[str] = flask.request.form.get("name")
     count: t.Optional[str] = flask.request.form.get("count")
-    origins: t.Optional[str] = flask.request.form.get("origins")
+    origin: t.Optional[str] = flask.request.form.get("origin")
 
     if name is not None:
         try:
@@ -97,9 +96,9 @@ def manage_counter(user: str, id: str) -> Response:
         except Exception:
             flask.abort(403)
 
-    if origins is not None:
+    if origin is not None:
         try:
-            counter.set_origins(origins)
+            counter.set_origin(origin)
         except Exception:
             flask.abort(403)
 
@@ -118,23 +117,12 @@ def counter_text(user: str, id: str) -> flask.Response:
     """render counter as text"""
 
     counter: models.Counter = models.Counter.query.filter_by(username=user, id=id).first_or_404()  # type: ignore
+    response: flask.Response = util.make_api(flask.Response(str(counter.inc_or_404().count), mimetype="text/plain"))  # type: ignore
 
-    response: flask.Response
-
-    origin: t.Optional[str] = util.get_origin()
-
-    try:
-        if origin is not None and re.fullmatch(counter.origins, origin, re.I):
-            response = util.make_api(flask.Response(str(counter.inc_or_404().count), mimetype="text/plain"))  # type: ignore
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Methods"] = "GET"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        else:
-            response = util.make_api(flask.Response("CORS"), False)
-
-        response.headers["Vary"] = "Origin"
-    except Exception:
-        flask.abort(500)
+    response.headers["Access-Control-Allow-Origin"] = counter.origin
+    response.headers["Access-Control-Allow-Methods"] = "GET"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Vary"] = "Origin"
 
     return response
 
@@ -155,32 +143,22 @@ def counter_svg(user: str, id: str) -> flask.Response:
             pass
 
     counter: models.Counter = models.Counter.query.filter_by(username=user, id=id).first_or_404()  # type: ignore
-    response: flask.Response
 
-    origin: t.Optional[str] = util.get_origin()
+    response: flask.Response = util.make_api(
+        flask.Response(
+            counter.inc_or_404().to_svg(  # type: ignore
+                fill=fill,
+                font=font,
+                **floats,
+            ),
+            mimetype="image/svg+xml",
+        )
+    )
 
-    try:
-        if origin is not None and re.fullmatch(counter.origins, origin, re.I):
-            response: flask.Response = util.make_api(
-                flask.Response(
-                    counter.inc_or_404().to_svg(  # type: ignore
-                        fill=fill,
-                        font=font,
-                        **floats,
-                    ),
-                    mimetype="image/svg+xml",
-                )
-            )
-
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Methods"] = "GET"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        else:
-            response = util.make_api(flask.Response("CORS"), False)
-
-        response.headers["Vary"] = "Origin"
-    except Exception:
-        flask.abort(500)
+    response.headers["Access-Control-Allow-Origin"] = counter.origin
+    response.headers["Access-Control-Allow-Methods"] = "GET"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Vary"] = "Origin"
 
     return response
 

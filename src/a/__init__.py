@@ -277,7 +277,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
             "name_len": const.NAME_LEN,
             "username_len": const.USERNAME_LEN,
             "bio_len": const.USERNAME_LEN,
-            "origins_len": const.COUNTER_ORIGINS_LEN,
+            "origin_len": const.COUNTER_ORIGIN_LEN,
             "rurl": flask.request.host_url + flask.request.path[1:],
             "is_admin": is_admin,
         }
