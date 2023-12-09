@@ -56,10 +56,13 @@ def restore() -> Response:
 def login(user: str) -> Response:
     """login into user account"""
 
-    if user == current_user.username:  # type: ignore
+    if util.is_admin() or user == current_user.username:  # type: ignore
         return flask.redirect("/")
 
     usr: models.User = models.User.query.filter_by(username=user).first_or_404()
+
+    if usr.role.value >= current_user.role.value:  # type: ignore
+        flask.abort(403)
 
     util.set_admin()
 
