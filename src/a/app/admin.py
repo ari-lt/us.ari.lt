@@ -51,12 +51,21 @@ def restore() -> Response:
     return flask.redirect("/")
 
 
+@admin.get("/clear")
+@util.require_role_route(const.Role.user)
+def clear() -> Response:
+    """restore cookies from session"""
+
+    util.clear_admin()
+    return flask.redirect("/")
+
+
 @admin.get("/@<string:user>")
 @util.require_role_route(const.Role.admin)
 def login(user: str) -> Response:
     """login into user account"""
 
-    if util.is_admin() or user == current_user.username:  # type: ignore
+    if user == current_user.username or util.is_admin():  # type: ignore
         return flask.redirect("/")
 
     usr: models.User = models.User.query.filter_by(username=user).first_or_404()

@@ -6,8 +6,8 @@ import base64
 import os
 import re
 import secrets
-from datetime import timedelta
 import time
+from datetime import timedelta
 from functools import lru_cache, partial
 from typing import Any, Dict, Optional, Tuple
 
@@ -18,9 +18,10 @@ from flask_limiter.util import get_remote_address
 from flask_login import LoginManager  # type: ignore
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Rule
+from werkzeug.wrappers import Response
 
 from . import const, crypt
-from .util import require_role, is_admin
+from .util import is_admin, require_role
 
 
 def random_cookie_salt() -> str:
@@ -79,7 +80,6 @@ def assign_http(app: flask.Flask) -> flask.Flask:
     for file, mime in (
         ("robots.txt", "text/plain"),
         ("manifest.json", "application/json"),
-        ("favicon.ico", "image/vnd.microsoft.icon"),
     ):
         if not os.path.isfile(file):
             continue
@@ -113,6 +113,11 @@ def assign_http(app: flask.Flask) -> flask.Flask:
     def _() -> flask.Response:
         """sitemap"""
         return flask.Response(sitemap, mimetype="application/xml")
+
+    @app.route("/favicon.ico", methods=["GET", "POST"])
+    def __favicon__() -> Response:
+        """favicon"""
+        return flask.redirect("https://ari.lt/favicon.ico")
 
     return app
 
@@ -155,7 +160,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     app.config["SESSION_COOKIE_SAMESITE"] = "strict"
     app.config["SESSION_COOKIE_SECURE"] = True
     app.config["SESSION_COOKIE_HTTPONLY"] = True
-    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=4)
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=4)
 
     app.config["REMEMBER_COOKIE_NAME"] = "authorization"
     app.config["REMEMBER_COOKIE_SAMESITE"] = "strict"

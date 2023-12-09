@@ -42,3 +42,13 @@ def user(username: str) -> t.Union[str, t.Tuple[str, int]]:
         user=user,
         apps=models.App.query.filter_by(username=username).all(),
     )
+
+
+@views.get("/git", defaults={"_": ""})
+@views.get("/git/", defaults={"_": ""})
+@views.get("/git/<path:_>")
+def git(_: str):
+    """git source"""
+    return flask.redirect(
+        f"https://ari.lt/lh/us.ari.lt/{flask.request.full_path[4:]}", code=302
+    )

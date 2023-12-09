@@ -402,10 +402,14 @@ class User(UserMixin, db.Model):
             for app in self.apps:  # type: ignore
                 db.session.delete(app)  # type: ignore
 
+            for counter in self.counters:  # type: ignore
+                db.session.delete(counter)  # type: ignore
+
             db.session.delete(self)
             db.session.commit()
 
             return True
-        except Exception:
+        except Exception as e:
+            flask.current_app.log_exception(e)
             db.session.rollback()
             return False
