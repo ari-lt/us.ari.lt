@@ -81,14 +81,8 @@ def blank() -> str:
     return flask.render_template("base.j2")
 
 
-with open("LICENSE", "r") as fp:
-    license_text: str = fp.read()
-
-
 @views.get("/LICENSE")
 @views.get("/license")
-@views.get("/LICENSE.txt")
-@views.get("/license.txt")
-def license() -> flask.Response:
+def license() -> Response:
     """license"""
-    return flask.Response(license_text, mimetype="text/plain")
+    return flask.redirect("https://www.gnu.org/licenses/gpl-3.0.en.html")
