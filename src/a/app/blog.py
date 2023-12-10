@@ -8,6 +8,7 @@ import xml.etree.ElementTree as etree
 import flask
 from flask_login import current_user  # type: ignore
 from werkzeug.wrappers import Response
+from datetime import datetime
 
 from .. import const, models, util
 from ..routing import Bp
@@ -575,6 +576,7 @@ def edit_post_commit(user: str, slug: str) -> Response:
         post.set_description(description)
 
     try:
+        post.edited = datetime.utcnow()  # type: ignore
         models.db.session.commit()
     except Exception:
         flask.flash("failed to edit blog post", "error")

@@ -137,7 +137,7 @@ class BlogPost(db.Model):
         nullable=False,
     )
     username: str = db.Column(
-        Unicode(const.USERNAME_LEN),
+        db.String(const.USERNAME_LEN),
         db.ForeignKey("blog.username"),
         nullable=False,
     )
@@ -220,7 +220,7 @@ class Blog(db.Model):
     """blog"""
 
     username: str = db.Column(
-        Unicode(const.USERNAME_LEN),
+        db.String(const.USERNAME_LEN),
         db.ForeignKey("user.username"),
         nullable=False,
         primary_key=True,
@@ -400,7 +400,7 @@ class Counter(db.Model):
     name: str = db.Column(Unicode(const.NAME_LEN), nullable=False)
     count: int = db.Column(HugeUInt())
     username: str = db.Column(
-        Unicode(const.USERNAME_LEN),
+        db.String(const.USERNAME_LEN),
         db.ForeignKey("user.username"),
         nullable=False,
     )
@@ -535,7 +535,7 @@ class App(db.Model):
     public: bool = db.Column(db.Boolean, default=False)
     secret_hash: t.Optional[str] = db.Column(db.String(const.HASH_LEN))
     username: str = db.Column(
-        Unicode(const.USERNAME_LEN),
+        db.String(const.USERNAME_LEN),
         db.ForeignKey("user.username"),
         nullable=False,
     )

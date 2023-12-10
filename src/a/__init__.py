@@ -10,6 +10,7 @@ import time
 from datetime import timedelta
 from functools import lru_cache
 from typing import Any, Dict, Optional, Tuple
+import traceback
 
 import flask
 import web_mini
@@ -296,7 +297,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
                 "http.j2",
                 code=e.code,
                 summary=e.name.lower(),
-                description=(e.description or f"http error code {e.code}").lower(),
+                description=(e.description or f"http error code {e.code}").lower() + str(traceback.format_exc()),
             ),
             e.code or 200,
         )

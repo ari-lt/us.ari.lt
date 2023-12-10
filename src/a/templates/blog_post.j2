@@ -45,13 +45,16 @@
           href="#main">skip</a>
         <span role="seperator" aria-hidden="true"> | </span>
 
-        {% if posts %}
-        <span role="menuitem">latest post : <a href="@{{ blog.username | escape }}/{{ posts[0].slug }}">{{ trunc(posts[0].title, 16) | escape }}}</a> at <time>{{ posts[0].posted }}</time> GMT</span>
+        {% if blog.visitor_url %}
+        <span role="menuitem">visitor <img src="{{ blog.visitor_url | escape }}" alt="visitor count" /></span>
         <span role="seperator" aria-hidden="true"> | </span>
         {% endif %}
 
-        {% if blog.visitor_url %}
-        <span role="menuitem">visitor <img src="{{ blog.visitor_url | escape }}" alt="visitor count" /></span>
+        <span role="menuitem"><time>{{ post.read_time() }}</time> read</span>
+
+        {% if post.posted != post.edited %}
+        <span role="seperator" aria-hidden="true"> | </span>
+        <span role="menuitem">edited at <time>{{ post.edited }}</time> GMT</span>
         {% endif %}
 
         <br role="seperator" aria-hidden="true" />
