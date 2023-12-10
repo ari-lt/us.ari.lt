@@ -69,8 +69,10 @@
         <a role="menuitem" href="@{{ blog.username | escape }}/manifest.json">manifest</a>
         <span role="seperator" aria-hidden="true"> | </span>
 
+        {% if blog.style %}
         <a role="menuitem" href="@{{ blog.username | escape }}/theme.txt">theme</a>
         <span role="seperator" aria-hidden="true"> | </span>
+        {% endif %}
 
         <a role="menuitem" href="/">ari-web</a>
 

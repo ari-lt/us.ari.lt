@@ -3,11 +3,11 @@
 """utils"""
 
 from functools import wraps
+from subprocess import check_output
 from typing import Any, Callable, NoReturn, Optional, Tuple
 
 import flask
 from flask_login import current_user, login_required  # type: ignore
-from subprocess import check_output
 
 from . import const, crypt, models
 from .c import OggCaptchaGenerator, c
@@ -221,7 +221,7 @@ def get_origin() -> Optional[str]:
 
 def trunc(data: str, length: int, end: str = " ...") -> str:
     """truncate data"""
-    return data[:length] + (end if len(data) > length else "")
+    return data[:length].strip() + (end if len(data) > length else "")
 
 
 def get_network() -> Tuple[int, int, int]:
