@@ -111,19 +111,19 @@ class BlogPost(db.Model):
         nullable=False,
     )
     title: str = db.Column(
-        Unicode(const.BLOG_POST_SLUG_LEN),
+        Unicode(const.BLOG_POST_SLUG_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     keywords: str = db.Column(
-        Unicode(const.BLOG_POST_KEYWORDS_LEN),
+        Unicode(const.BLOG_POST_KEYWORDS_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     content: str = db.Column(
-        Unicode(const.BLOG_POST_CONTENT_LEN),
+        Unicode(const.BLOG_POST_CONTENT_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     description: str = db.Column(
-        Unicode(const.BLOG_POST_DESCRIPTION_LEN),
+        Unicode(const.BLOG_POST_DESCRIPTION_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     posted: DateTime = db.Column(
@@ -226,23 +226,23 @@ class Blog(db.Model):
         primary_key=True,
     )
     title: str = db.Column(
-        Unicode(const.BLOG_POST_SLUG_LEN),
+        Unicode(const.BLOG_POST_SLUG_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     header: str = db.Column(
-        Unicode(const.BLOG_POST_SLUG_LEN),
+        Unicode(const.BLOG_POST_SLUG_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     description: str = db.Column(
-        Unicode(const.BLOG_POST_DESCRIPTION_LEN),
+        Unicode(const.BLOG_POST_DESCRIPTION_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     keywords: str = db.Column(
-        Unicode(const.BLOG_POST_KEYWORDS_LEN),
+        Unicode(const.BLOG_POST_KEYWORDS_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     default_keywords: str = db.Column(
-        Unicode(const.BLOG_POST_KEYWORDS_LEN),
+        Unicode(const.BLOG_POST_KEYWORDS_LEN, collation="utf8mb4_unicode_ci"),
         nullable=False,
     )
     primary: str = db.Column(
@@ -397,7 +397,9 @@ class Counter(db.Model):
         nullable=False,
         unique=True,
     )
-    name: str = db.Column(Unicode(const.NAME_LEN), nullable=False)
+    name: str = db.Column(
+        Unicode(const.NAME_LEN, collation="utf8mb4_unicode_ci"), nullable=False
+    )
     count: int = db.Column(HugeUInt())
     username: str = db.Column(
         db.String(const.USERNAME_LEN),
@@ -531,7 +533,9 @@ class App(db.Model):
         nullable=False,
         unique=True,
     )
-    name: str = db.Column(Unicode(const.NAME_LEN), nullable=False)
+    name: str = db.Column(
+        Unicode(const.NAME_LEN, collation="utf8mb4_unicode_ci"), nullable=False
+    )
     public: bool = db.Column(db.Boolean, default=False)
     secret_hash: t.Optional[str] = db.Column(db.String(const.HASH_LEN))
     username: str = db.Column(
@@ -597,7 +601,11 @@ class User(UserMixin, db.Model):
         unique=True,
         nullable=False,
     )
-    bio: str = db.Column(Unicode(const.BIO_LEN), nullable=False, default="")
+    bio: str = db.Column(
+        Unicode(const.BIO_LEN, collation="utf8mb4_unicode_ci"),
+        nullable=False,
+        default="",
+    )
     password_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
     pin_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
     role: const.Role = db.Column(
