@@ -1,0 +1,53 @@
+{% extends "base.j2" %}
+
+{% block title %}Blog{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for("static", filename="css/new_post.css")}}" />
+<script src="{{ url_for("static", filename="js/lib.js")}}"></script>
+<script src="{{ url_for("static", filename="js/style_blog.js")}}" defer></script>
+<style>textarea,iframe{height:70%}</style>
+{% endblock %}
+
+{% block description %}create a blog post{% endblock %}
+
+{% block body %}
+<h1>style your blog</h1>
+
+<form method="POST">
+    <fieldset>
+        <legend>styles</legend>
+
+        <div class="group">
+            <div class="inside-group">
+                <h2>styles ( everything below `{{ blog_post_section_delim }}` will purely apply to posts )</h2>
+                <textarea required placeholder="... global css ...&NewLine;{{ blog_post_section_delim }}&NewLine;... post-only css ..." maxlength="{{ blog_post_content_len }}" name="css" id="css">{{ (style or "") | escape }}</textarea>
+            </div>
+
+            <div class="inside-group">
+                <h2><a href="/blank" id="preview-index-a" target="_blank">preview index</a></h2>
+                <iframe id="preview-index" src="/blank"></iframe>
+            </div>
+        </div>
+
+        <div class="inside-group">
+            <h2><a href="/blank" id="preview-post-a" target="_blank">preview post</a></h2>
+            <iframe id="preview-post" src="/blank"></iframe>
+        </div>
+
+        <div id=captcha class="captcha">
+            {% if c is not none %}
+            {{ c.image() }} {{ c.audio() }}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="code">CAPTCHA</label>
+            <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
+        </div>
+
+        <button type="submit">publish</button>
+    </fieldset>
+</form>
+{% include "captcha.j2" %}
+{% endblock %}

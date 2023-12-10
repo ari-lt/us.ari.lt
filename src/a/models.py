@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """models"""
 
+import random
 import typing as t
 from base64 import b85encode, urlsafe_b64encode
 from datetime import datetime
@@ -14,10 +15,11 @@ import flask
 from flask_argon2 import Argon2  # type: ignore
 from flask_login import UserMixin  # type: ignore
 from flask_sqlalchemy import SQLAlchemy
+from readtime import of_markdown as read_time_of_markdown  # type: ignore
 from sqlalchemy import DECIMAL, DateTime, Dialect, Enum, TypeDecorator, Unicode
 from sqlalchemy.orm import Relationship, relationship
 
-from . import const, types, util
+from . import const, md, types, util
 
 db: SQLAlchemy = SQLAlchemy()
 argon2: Argon2 = Argon2()
@@ -93,6 +95,297 @@ def gen_id(model: t.Any) -> str:  # type: ignore
                 return generated_id
         except Exception:
             continue
+
+
+class BlogPost(db.Model):
+    """user blog post"""
+
+    id: str = db.Column(
+        db.String(const.ID_LEN),
+        primary_key=True,
+        nullable=False,
+        unique=True,
+    )
+    slug: str = db.Column(
+        db.String(const.BLOG_POST_SLUG_LEN),
+        nullable=False,
+    )
+    title: str = db.Column(
+        Unicode(const.BLOG_POST_SLUG_LEN),
+        nullable=False,
+    )
+    keywords: str = db.Column(
+        Unicode(const.BLOG_POST_KEYWORDS_LEN),
+        nullable=False,
+    )
+    content: str = db.Column(
+        Unicode(const.BLOG_POST_CONTENT_LEN),
+        nullable=False,
+    )
+    description: str = db.Column(
+        Unicode(const.BLOG_POST_DESCRIPTION_LEN),
+        nullable=False,
+    )
+    posted: DateTime = db.Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+    edited: DateTime = db.Column(
+        DateTime,
+        default=datetime.utcnow,
+        nullable=False,
+    )
+    username: str = db.Column(
+        Unicode(const.USERNAME_LEN),
+        db.ForeignKey("blog.username"),
+        nullable=False,
+    )
+
+    def __init__(
+        self,
+        title: str,
+        keywords: str,
+        content: str,
+        description: str,
+        username: str,
+    ) -> None:
+        assert len(self.query.filter_by(username=username).all()) <= const.BLOG_POST_MAX, "too many counters"  # type: ignore
+
+        self.id: str = gen_id(self)
+        self.set_slug(title)
+        self.set_slug(title)
+        self.set_title(title)
+        self.set_keywords(keywords)
+        self.set_content(content)
+        self.set_description(description)
+        self.username: str = username
+
+    def set_slug(self, title: str) -> None:
+        """set slug based off the title"""
+
+        slug: str = md.slugify(title)
+
+        while self.query.filter_by(slug=slug).first() is not None:
+            slug = md.slugify(title, prefix=random.randbytes(8).hex())
+
+        self.slug: str = slug
+
+    def set_title(self, title: str) -> None:
+        """set title"""
+
+        assert len(title) <= const.BLOG_POST_SLUG_LEN
+        self.title: str = title
+
+    def set_keywords(self, keywords: str) -> None:
+        """set keywords"""
+
+        assert len(keywords) <= const.BLOG_POST_KEYWORDS_LEN
+        self.keywords: str = keywords
+
+    def set_content(self, content: str) -> None:
+        """set content"""
+
+        assert len(content) <= const.BLOG_POST_CONTENT_LEN
+        self.content: str = content
+
+    def set_description(self, description: str) -> None:
+        """set description"""
+
+        assert len(description) <= const.BLOG_POST_DESCRIPTION_LEN
+        self.description: str = description
+
+    def read_time(self) -> str:
+        """get read time"""
+        return read_time_of_markdown(self.content, 150).text  # type: ignore
+
+    def markdown(self) -> str:
+        """get markdown"""
+        return md.markdown(self.content)
+
+    def delete_post(self) -> bool:
+        """delete post"""
+
+        try:
+            db.session.delete(self)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            flask.current_app.log_exception(e)
+            return False
+
+
+class Blog(db.Model):
+    """blog"""
+
+    username: str = db.Column(
+        Unicode(const.USERNAME_LEN),
+        db.ForeignKey("user.username"),
+        nullable=False,
+        primary_key=True,
+    )
+    title: str = db.Column(
+        Unicode(const.BLOG_POST_SLUG_LEN),
+        nullable=False,
+    )
+    header: str = db.Column(
+        Unicode(const.BLOG_POST_SLUG_LEN),
+        nullable=False,
+    )
+    description: str = db.Column(
+        Unicode(const.BLOG_POST_DESCRIPTION_LEN),
+        nullable=False,
+    )
+    keywords: str = db.Column(
+        Unicode(const.BLOG_POST_KEYWORDS_LEN),
+        nullable=False,
+    )
+    default_keywords: str = db.Column(
+        Unicode(const.BLOG_POST_KEYWORDS_LEN),
+        nullable=False,
+    )
+    primary: str = db.Column(
+        db.String(const.BLOG_PRIMARY_LEN),
+        nullable=False,
+    )
+    secondary: str = db.Column(
+        db.String(const.BLOG_SECONDARY_LEN),
+        nullable=False,
+    )
+    locale: str = db.Column(
+        db.String(const.BLOG_LOCALE_LEN),
+        nullable=False,
+    )
+    comment_url: t.Optional[str] = db.Column(
+        db.String(const.BLOG_COMMENT_URL_LEN),
+        nullable=True,
+    )
+    visitor_url: t.Optional[str] = db.Column(
+        db.String(const.BLOG_VISITOR_URL_LEN),
+        nullable=True,
+    )
+    style: t.Optional[str] = db.Column(
+        db.String(const.BLOG_POST_CONTENT_LEN),
+        nullable=True,
+    )
+    posts: Relationship[BlogPost] = relationship(
+        "BlogPost",
+        backref="blog",
+        lazy="dynamic",
+    )
+
+    def __init__(
+        self,
+        username: str,
+        title: str,
+        header: str,
+        description: str,
+        keywords: str,
+        default_keywords: str,
+        primary: str,
+        secondary: str,
+        locale: str,
+        comment_url: t.Optional[str] = None,
+        visitor_url: t.Optional[str] = None,
+        style: t.Optional[str] = None,
+    ) -> None:
+        self.username: str = username
+        self.set_title(title)
+        self.set_header(header)
+        self.set_description(description)
+        self.set_keywords(keywords)
+        self.set_default_keywords(default_keywords)
+        self.set_primary(primary)
+        self.set_secondary(secondary)
+        self.set_locale(locale)
+        self.set_comment_url(comment_url)
+        self.set_visitor_url(visitor_url)
+        self.set_style(style)
+
+    def set_title(self, title: str) -> None:
+        """set title"""
+
+        assert len(title) <= const.BLOG_POST_SLUG_LEN
+        self.title: str = title
+
+    def set_header(self, header: str) -> None:
+        """set header"""
+
+        assert len(header) <= const.BLOG_POST_SLUG_LEN
+        self.header: str = header
+
+    def set_description(self, description: str) -> None:
+        """set header"""
+
+        assert len(description) <= const.BLOG_POST_DESCRIPTION_LEN
+        self.description: str = description
+
+    def set_keywords(self, keywords: str) -> None:
+        """set keywords"""
+
+        assert len(keywords) <= const.BLOG_POST_KEYWORDS_LEN
+        self.keywords: str = keywords
+
+    def set_default_keywords(self, default_keywords: str) -> None:
+        """set keywords"""
+
+        assert len(default_keywords) <= const.BLOG_POST_KEYWORDS_LEN
+        self.default_keywords: str = default_keywords
+
+    def set_primary(self, primary: str) -> None:
+        """set primary"""
+
+        assert len(primary) == const.BLOG_PRIMARY_LEN
+        self.primary: str = primary
+
+    def set_secondary(self, secondary: str) -> None:
+        """set secondary"""
+
+        assert len(secondary) == const.BLOG_SECONDARY_LEN
+        self.secondary: str = secondary
+
+    def set_locale(self, locale: str) -> None:
+        """set locale"""
+
+        assert len(locale) == const.BLOG_LOCALE_LEN
+        assert "_" in locale
+
+        self.locale: str = locale
+
+    def set_visitor_url(self, visitor_url: t.Optional[str]) -> None:
+        """set visitor url"""
+
+        assert len(visitor_url or "") <= const.BLOG_VISITOR_URL_LEN
+        self.visitor_url: t.Optional[str] = visitor_url
+
+    def set_comment_url(self, comment_url: t.Optional[str]) -> None:
+        """set comment url"""
+
+        assert len(comment_url or "") <= const.BLOG_COMMENT_URL_LEN
+        self.comment_url: t.Optional[str] = comment_url
+
+    def set_style(self, style: t.Optional[str]) -> None:
+        """set style"""
+
+        assert len(style or "") <= const.BLOG_POST_CONTENT_LEN
+        self.style: t.Optional[str] = style
+
+    def delete_blog(self) -> bool:
+        """delete blog"""
+
+        try:
+            for post in self.posts:  # type: ignore
+                db.session.delete(post)  # type: ignore
+
+            db.session.delete(self)
+            db.session.commit()
+
+            return True
+        except Exception as e:
+            db.session.rollback()
+            flask.current_app.log_exception(e)
+            return False
 
 
 class Counter(db.Model):
@@ -326,6 +619,16 @@ class User(UserMixin, db.Model):
         backref="user",
         lazy="dynamic",
     )
+
+    @property
+    def blog(self) -> t.Optional[Blog]:
+        """get blog"""
+        return Blog.query.filter_by(username=self.username).first()  # type: ignore
+
+    @blog.setter
+    def blog(self, value: Blog) -> t.Optional[Blog]:
+        """get blog"""
+        db.session.add(value)
 
     def __init__(self, username: str, password: str, pin: str) -> None:
         assert self.check_username(username), "invalid username"

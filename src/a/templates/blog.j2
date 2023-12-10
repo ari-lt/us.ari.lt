@@ -1,0 +1,106 @@
+{% extends "base.j2" %}
+
+{% block title_overwrite %}{% endblock %}
+
+{% block title %}{{ blog.title | escape }}{% endblock %}
+
+{% block description %}{{ blog.title | escape }} : {{ blog.description | escape }} -- @{{ blog.username | escape }}'s blog on ari-web{% endblock %}
+
+{% block lang %}{{ blog.locale.split("_", maxsplit=1)[0].lower() }}{% endblock %}
+
+{% block head %}
+<link rel="icon" href="/favicon.ico" sizes="128x128" type="image/x-icon" />
+<meta name="keywords" content="ari-web, login, authentication, services, free, {{ blog.username | escape }}, {{ blog.keywords | escape }}" />
+
+<meta property="og:type" content="website" />
+
+<meta name="color-scheme" content="dark" />
+<meta name="theme-color" content="{{ blog.primary | escape }}" />
+<style>body{background-color:{{ blog.primary | escape }};color:{{ blog.secondary | escape }}};nav img{height:1em}</style>
+
+<link rel="manifest" href="@{{ blog.username | escape }}/manifest.json" />
+
+<link rel="canonical" href="{{ request.url }}">
+<meta name="author" content="@{{ blog.username | escape }}" />
+<meta name="generator" content="ari-web accounts and services" />
+<meta property="og:locale" content="{{ blog.locale | escape }}" />
+
+<link rel="alternate" href="@{{ blog.username | escape }}/robots.txt" />
+
+<link rel="sitemap" href="@{{ blog.username | escape }}/sitemap.xml" type="application/xml">
+
+{% if style %}
+<style>@import url("data:text/css;base64,{{ b64(min_css(style)) }}")</style>
+{% endif %}
+{% endblock %}
+
+{% block body %}
+<header role="group">
+    <h1 role="heading" aria-level="1">{{ blog.header | escape }}</h1>
+
+    <nav id="info-bar" role="menubar">
+        <a role="menuitem"
+          aria-label="skip"
+          href="#main">skip</a>
+        <span role="seperator" aria-hidden="true"> | </span>
+
+        {% if posts %}
+        <span role="menuitem">latest post : <a href="@{{ blog.username | escape }}/{{ posts[0].slug }}">{{ trunc(posts[0].title, 16) | escape }}</a> at <time>{{ posts[0].posted }}</time> GMT</span>
+        <span role="seperator" aria-hidden="true"> | </span>
+        {% endif %}
+
+        {% if blog.visitor_url %}
+        <span role="menuitem">visitor <img src="{{ blog.visitor_url | escape }}" alt="visitor count" /></span>
+        {% endif %}
+
+        <br role="seperator" aria-hidden="true" />
+
+        <a role="menuitem" href="@{{ blog.username | escape }}/stats">stats</a>
+        <span role="seperator" aria-hidden="true"> | </span>
+
+        {% if blog.comment_url %}
+        <a role="menuitem" href="{{ blog.comment_url | escape }}">comment</a>
+        <span role="seperator" aria-hidden="true"> | </span>
+        {% endif %}
+
+        <a role="menuitem" href="@{{ blog.username | escape }}/rss.xml">rss</a>
+        <span role="seperator" aria-hidden="true"> | </span>
+
+        <a role="menuitem" href="@{{ blog.username | escape }}/manifest.json">manifest</a>
+        <span role="seperator" aria-hidden="true"> | </span>
+
+        <a role="menuitem" href="@{{ blog.username | escape }}/theme.txt">theme</a>
+        <span role="seperator" aria-hidden="true"> | </span>
+
+        <a role="menuitem" href="/">ari-web</a>
+
+        {% if current_user.is_authenticated and current_user.username == blog.username %}
+        <br role="seperator" aria-hidden="true" />
+
+        <a role="menuitem" href="@{{ blog.username | escape }}/~new">new</a>
+
+        <span role="seperator" aria-hidden="true"> | </span>
+        <a role="menuitem" href="@{{ blog.username | escape }}/~style">style</a>
+
+        <span role="seperator" aria-hidden="true"> | </span>
+        <a role="menuitem" href="@{{ blog.username | escape }}/~nuke">nuke</a>
+        {% endif %}
+
+        <hr aria-hidden="true" role="seperator" />
+    </nav>
+</header>
+<main>
+    <article id="main">
+    {% if posts %}
+    <ol reversed>
+        {% for post in posts %}
+        <li><a href="@{{ blog.username | escape }}/{{ post.slug }}">{{ post.title | escape }}</a></li>
+        {% endfor %}
+    </ol>
+    {% else %}
+    <i>this blog is empty</i>
+    {% endif %}
+    </article>
+</main>
+<footer><p>{% if blog.username != config["OWNER_USER"] %}@{{ blog.username | escape }} + {% endif %}Ari Archer &lt;<a href="mailto:ari.web.xyz@gmail.com">ari.web.xyz@gmail.com</a>&gt; + GPL-3.0-or-later</p></footer>
+{% endblock %}

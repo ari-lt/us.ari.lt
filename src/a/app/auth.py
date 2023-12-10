@@ -253,6 +253,8 @@ def signin() -> t.Union[t.Tuple[str, int], Response]:
 @login_required
 def delete() -> str:
     """delete account"""
+
+    flask.flash("you are about to delete your account", "warning")
     return flask.render_template("delete.j2", c=util.jscaptcha())
 
 
@@ -263,8 +265,9 @@ def delete_user() -> Response:
     """delete account"""
 
     sure: t.Optional[str] = flask.request.form.get("sure")
+    pin: t.Optional[str] = flask.request.form.get("pin")
 
-    if not sure:
+    if not (sure and current_user.verify_pin(pin)):  # type: ignore
         flask.flash("account not deleted", "info")
         return flask.redirect("/")
 

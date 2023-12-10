@@ -7,6 +7,7 @@ from typing import Any, Callable, NoReturn, Optional, Tuple
 
 import flask
 from flask_login import current_user, login_required  # type: ignore
+from subprocess import check_output
 
 from . import const, crypt, models
 from .c import OggCaptchaGenerator, c
@@ -137,6 +138,7 @@ def api(fn: Callable[..., Any]) -> Callable[..., Any]:
 def clear_admin() -> None:
     """clear admin"""
 
+    flask.session.permanent = False
     flask.session.pop("__admin__", None)
 
 
@@ -167,6 +169,8 @@ def is_admin() -> bool:
 
 def set_admin() -> None:
     """set admin session"""
+
+    flask.session.permanent = True
 
     flask.session["__admin__"] = (
         models.argon2.generate_password_hash(flask.current_app.config["ADMIN_KEY"] + flask.current_app.config["SECRET_KEY"]),  # type: ignore
@@ -199,7 +203,7 @@ def get_admin() -> Optional[Tuple[str, bool]]:
     return None
 
 
-def get_admin_user() -> Optional[models.User]:
+def get_admin_user() -> Optional[Any]:
     """get admin user"""
 
     admin: Optional[Tuple[str, bool]] = get_admin()
@@ -213,3 +217,23 @@ def get_admin_user() -> Optional[models.User]:
 def get_origin() -> Optional[str]:
     """get origin"""
     return flask.request.headers.get("Origin", flask.request.referrer)
+
+
+def trunc(data: str, length: int, end: str = " ...") -> str:
+    """truncate data"""
+    return data[:length] + (end if len(data) > length else "")
+
+
+def get_network() -> Tuple[int, int, int]:
+    """get network usage in bytes
+
+    rx, tx, oc"""
+
+    oc: int = max(len(check_output(["ss", "-Hntu"]).splitlines()) - 1, 0)
+
+    for line in open("/proc/net/dev", "r"):
+        if "lo" not in line and ":" in line:
+            data = line.split()
+            return int(data[1]), int(data[9]), oc
+
+    return 0, 0

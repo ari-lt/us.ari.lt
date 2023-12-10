@@ -1,0 +1,92 @@
+{% extends "base.j2" %}
+
+{% block title %}
+Blog -&gt; {% if post %}
+{{ post.title | escape }}
+{% else %}
+New post
+{% endif %}
+{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for("static", filename="css/new_post.css")}}" />
+<script src="{{ url_for("static", filename="js/lib.js")}}"></script>
+<script src="{{ url_for("static", filename="js/new_post.js")}}" defer></script>
+{% endblock %}
+
+{% block description %}
+{% if post %}
+edit '{{ post.title | escape }}'
+{% else %}
+create a blog post
+{% endif %}
+{% endblock %}
+
+{% block body %}
+<h1>
+{% if post %}
+edit '{{ post.title | escape }}'
+{% else %}
+new post
+{% endif %}
+</h1>
+
+<form method="POST">
+    <fieldset>
+        <legend>blog post</legend>
+
+        <div class="form-group">
+            <label for="title">title</label>
+            <input required type="text" maxlength="{{ blog_post_title_len }}" id="title" name="title" placeholder="the post title"
+            {% if post %}
+            value="{{ post.title | escape }}"
+            {% endif %}
+            />
+        </div>
+
+        <div class="group">
+            <div class="inside-group">
+                <h2>post</h2>
+                <textarea required placeholder="markdown post" maxlength="{{ blog_post_content_len }}" name="content" id="content">{% if post %}{{ post.content | escape }}{% endif %}</textarea>
+            </div>
+
+            <div class="inside-group">
+                <h2><a href="/blank" id="preview-a" target="_blank">preview</a></h2>
+                <iframe id="preview" src="/blank"></iframe>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="keywords">keywords ( sep by `,` )</label>
+            <input required type="text" maxlength="{{ blog_post_keywords_len }}" id="keywords" name="keywords" placeholder="the post keywords"
+            {% if post %}
+            value="{{ post.keywords | escape }}"
+            {% endif %}
+            />
+        </div>
+
+        <div class="form-group">
+            <label for="description">description</label>
+            <input required type="text" maxlength="{{ blog_post_description_len }}" id="description" name="description" placeholder="a short post description"
+            {% if post %}
+            value="{{ post.description | escape }}"
+            {% endif %}
+            />
+        </div>
+
+        <div id=captcha class="captcha">
+            {% if c is not none %}
+            {{ c.image() }} {{ c.audio() }}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="code">CAPTCHA</label>
+            <input required type="text" id="code" name="code" placeholder="enter the CAPTCHA above" />
+        </div>
+
+        <button type="submit">post it</button>
+    </fieldset>
+</form>
+{% include "captcha.j2" %}
+{% endblock %}

@@ -38,8 +38,6 @@ def restore() -> Response:
 
         usr: models.User = models.User.query.filter_by(username=admin[0]).first_or_404()
 
-        flask.session.permanent = False
-
         logout_user()
         login_user(usr, admin[1])
 
@@ -74,8 +72,6 @@ def login(user: str) -> Response:
         flask.abort(403)
 
     util.set_admin()
-
-    flask.session.permanent = True
 
     logout_user()
     login_user(usr)

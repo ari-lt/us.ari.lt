@@ -1,21 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{% block lang %}en{% endblock %}">
     <head>
         <meta charset="UTF-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        <title>Ari::web -&gt; Accounts -&gt; {% block title %}unlabled{% endblock %}</title>
+        <title>{% block title_overwrite %}Ari::web -&gt; Accounts -&gt;{% endblock %}{% block title %}unlabled{% endblock %}</title>
 
         <meta name="description" content="{% block description %}no description{% endblock %}" />
-        <meta
-            name="keywords"
-            content="ari-web, login, authentication, services, free"
-        />
         <meta
             name="robots"
             content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large"
         />
+        <link rel="license" href="/LICENSE" />
+        <meta name="license" content="GPL-3.0-or-later">
+
+        {% if blog is not defined %}
+        <meta
+            name="keywords"
+            content="ari-web, login, authentication, services, free"
+        />
+
         <meta property="og:type" content="website" />
 
         <meta name="color-scheme" content="dark" />
@@ -43,6 +48,7 @@
             type="text/css"
         />
         </noscript>
+        {% endif %}
 
         {% block head %}{% endblock %}
     </head>
@@ -58,7 +64,6 @@
             </details>
             {% endif %}
         {% endwith %}
-        {% block body %}<h1>hello world</h1>{% endblock %}
+        {% block body %}{% endblock %}
     </body>
 </html>
-

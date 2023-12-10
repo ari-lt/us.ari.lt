@@ -16,6 +16,7 @@
 <a href="{{ url_for("auth.signout") }}">sign out</a>
 <a href="{{ url_for("auth.manage") }}">manage user</a>
 <a href="{{ url_for("counter.index") }}">counters management</a>
+<a href="{{ url_for("blog.index") }}">blogging</a>
 
 {% if is_admin() %}
 <a href="{{ url_for("admin.restore") }}">restore session</a>
@@ -28,6 +29,28 @@
 
 <p>currently logged in as {{ current_user.username | escape }}</p>
 {% endif %}
+
+<h2>system information</h2>
+
+<pre>
+$ free -h
+{{ free | escape }}
+
+$ lsblk -ifo 'NAME,FSTYPE,FSVER,FSAVAIL,FSUSE%'
+{{ lsblk | escape }}
+
+$ cat /proc/loadavg
+{{ loadavg | escape }}
+
+$ netusage
+{{ net | escape }}
+
+$ cpusage
+{{ cpu | escape }}
+
+$ date
+{{ date | escape }}
+</pre>
 
 <h2>users</h2>
 <ul>

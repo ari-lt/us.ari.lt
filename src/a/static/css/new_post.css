@@ -1,0 +1,55 @@
+form, fieldset {
+    width: 100%;
+    height: 100vh;
+}
+
+h1 {
+    text-align: center;
+}
+
+textarea, iframe {
+    resize: none;
+    height: 85%;
+    width: 100%;
+}
+
+textarea {
+    padding: 0.5em;
+}
+
+.group {
+    display: grid;
+    grid-template-columns: 60% auto;
+    grid-gap: 1em;
+    height: 100%;
+}
+
+.inside-group {
+    grid-gap: 1em;
+    height: 100%;
+}
+
+.inside-group:nth-child(2) {
+    width: 100%;
+    height: 100%;
+}
+
+.captcha * {
+    width: 40%;
+}
+
+@media screen and (max-width: 600px) {
+    .group, .inside-group,
+    .group *, .inside-group * {
+        display: block;
+    }
+
+    iframe {
+        display: none !important;
+    }
+
+    textarea {
+        width: 100%;
+        margin-bottom: 1em;
+    }
+}

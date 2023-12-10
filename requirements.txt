@@ -10,3 +10,7 @@ pydub
 pymysql
 flask-limiter
 cryptography
+unidecode
+mistune
+bleach
+readtime

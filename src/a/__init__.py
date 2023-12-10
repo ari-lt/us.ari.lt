@@ -8,7 +8,7 @@ import re
 import secrets
 import time
 from datetime import timedelta
-from functools import lru_cache, partial
+from functools import lru_cache
 from typing import Any, Dict, Optional, Tuple
 
 import flask
@@ -20,7 +20,7 @@ from werkzeug.exceptions import HTTPException
 from werkzeug.routing import Rule
 from werkzeug.wrappers import Response
 
-from . import const, crypt
+from . import const, crypt, models, util
 from .util import is_admin, require_role
 
 
@@ -72,22 +72,37 @@ def assign_apps(
 def assign_http(app: flask.Flask) -> flask.Flask:
     """assign http file stuff"""
 
-    def _new_route(content: str, mime: str) -> flask.Response:
-        """new route"""
+    # manifest
 
-        return flask.Response(content, mimetype=mime)
+    if os.path.isfile("manifest.json"):
+        with open("manifest.json", "r") as fp:
+            m: str = fp.read()
 
-    for file, mime in (
-        ("robots.txt", "text/plain"),
-        ("manifest.json", "application/json"),
-    ):
-        if not os.path.isfile(file):
-            continue
+        @app.route("/manifest.json")
+        def __manifest__() -> flask.Response:
+            """new route"""
+            return flask.Response(m, mimetype="application/json")
 
-        with open(file, "r") as fp:
-            part: partial[flask.Response] = partial(_new_route, fp.read(), mime)
-            part.__name__ = "_" + file.replace(".", "_")  # type: ignore
-            app.route(f"/{file}", methods=["GET", "POST"])(part)  # type: ignore
+    # favicon
+
+    @app.route("/favicon.ico", methods=["GET", "POST"])
+    def __favicon__() -> Response:
+        """favicon"""
+        return flask.redirect("https://ari.lt/favicon.ico")
+
+    # robots
+
+    @app.route("/robots.txt", methods=["GET", "POST"])
+    def __robots__() -> Response:
+        """favicon"""
+
+        robots: str = f"User-agent: *\nAllow: *\n\
+Sitemap: {app.config['PREFERRED_URL_SCHEME']}://{app.config['DOMAIN']}/sitemap.xml\n"
+
+        for blog in models.Blog.query.all():  # type: ignore
+            robots += f"Sitemap: {app.config['PREFERRED_URL_SCHEME']}://{app.config['DOMAIN']}/blog/@{blog.username}/sitemap.xml\n"  # type: ignore
+
+        return flask.Response(robots, mimetype="text/plain")
 
     # gen sitemap
 
@@ -98,26 +113,40 @@ def assign_http(app: flask.Flask) -> flask.Flask:
     sitemap: str = '<?xml version="1.0" encoding="UTF-8"?>\
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
 
+    def surl(loc: str) -> str:
+        """sitemap url"""
+
+        u: str = "<url>"
+        u += f'<loc>{app.config["PREFERRED_URL_SCHEME"]}://{app.config["DOMAIN"]}{loc}</loc>'
+        u += "<priority>1.0</priority>"
+        return u + "</url>"
+
+    sitemap += surl("/robots.txt")
+    sitemap += surl("/manifest.json")
+    sitemap += surl("/LICENSE")
+
     for rule in app.url_map.iter_rules():
         url: str = pat.sub(r"\1", rule.rule)
+        sitemap += surl(url)
 
-        sitemap += "<url>"
-        sitemap += f'<loc>{app.config["PREFERRED_URL_SCHEME"]}://{app.config["DOMAIN"]}{url}</loc>'
-        sitemap += "<priority>1.0</priority>"
-        sitemap += "</url>"
-
-    sitemap += "</urlset>"
     sitemap = sitemap.replace("@user", f"@{app.config['OWNER_USER']}")
 
     @app.route("/sitemap.xml", methods=["GET", "POST"])
-    def _() -> flask.Response:
+    def __sitemap__() -> flask.Response:
         """sitemap"""
-        return flask.Response(sitemap, mimetype="application/xml")
+        esitemap: str = sitemap
 
-    @app.route("/favicon.ico", methods=["GET", "POST"])
-    def __favicon__() -> Response:
-        """favicon"""
-        return flask.redirect("https://ari.lt/favicon.ico")
+        for user in models.User.query.all():  # type: ignore
+            esitemap += surl(f"/@{user.username}")  # type: ignore
+
+        for blog in models.Blog.query.all():  # type: ignore
+            esitemap += surl(f"/blog/@{blog.username}")  # type: ignore
+
+            if blog.username == app.config["OWNER_USER"]:  # type: ignore
+                for post in blog.posts:  # type: ignore
+                    esitemap += surl(f"/blog/@{blog.username}/{post.slug}")  # type: ignore
+
+        return flask.Response(esitemap + "</urlset>", mimetype="application/xml")
 
     return app
 
@@ -223,7 +252,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
         response.headers[
             "Strict-Transport-Security"
         ] = "max-age=63072000; includeSubDomains; preload"
-        response.headers["X-Frame-Options"] = "deny"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Content-Security-Policy"] = "upgrade-insecure-requests"
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
@@ -272,6 +301,10 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
             e.code or 200,
         )
 
+    def b64(data: str) -> str:
+        """base64"""
+        return base64.b64encode(data.encode()).decode("ascii")
+
     @app.context_processor  # type: ignore
     def _() -> Dict[str, Any]:
         """expose functions"""
@@ -285,6 +318,19 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
             "origin_len": const.COUNTER_ORIGIN_LEN,
             "rurl": flask.request.host_url + flask.request.path[1:],
             "is_admin": is_admin,
+            "blog_post_slug_len": const.BLOG_POST_SLUG_LEN,
+            "blog_post_keywords_len": const.BLOG_POST_KEYWORDS_LEN,
+            "blog_post_content_len": const.BLOG_POST_CONTENT_LEN,
+            "blog_post_description_len": const.BLOG_POST_DESCRIPTION_LEN,
+            "blog_primary_len": const.BLOG_PRIMARY_LEN,
+            "blog_secondary_len": const.BLOG_SECONDARY_LEN,
+            "blog_locale_len": const.BLOG_LOCALE_LEN,
+            "blog_comment_url_len": const.BLOG_COMMENT_URL_LEN,
+            "blog_visitor_url_len": const.BLOG_VISITOR_URL_LEN,
+            "trunc": util.trunc,
+            "b64": b64,
+            "blog_post_section_delim": const.BLOG_POST_SECTION_DELIM,
+            "min_css": min_css,
         }
 
     from .c import c
