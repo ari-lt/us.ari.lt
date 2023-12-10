@@ -82,6 +82,9 @@ def user_blog(user: str) -> str:
     usr: models.User = models.User.query.filter_by(username=user).first_or_404()
     blog: t.Optional[models.Blog] = usr.blog
 
+    if blog is None:
+        flask.abort(404)
+
     return flask.render_template(
         "blog.j2",
         c=util.jscaptcha(),
