@@ -17,10 +17,12 @@
             <input required type="checkbox" id="sure" name="sure" />
         </div>
 
+        {% if not is_admin() %}
         <div class="form group">
             <label for="pin">PIN</label>
             <input inputmode="numeric" type="password" required maxlength="{{ pin_len }}" minlength="1" id="pin" name="pin" placeholder="PIN" />
         </div>
+        {% endif %}
 
         <div id=captcha class="captcha">
             {% if c is not none %}

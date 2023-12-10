@@ -305,6 +305,9 @@ def new_post(user: str) -> str:
     if current_user.username != user:  # type: ignore
         flask.abort(401)
 
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
+
     return flask.render_template("blog_new.j2", c=util.jscaptcha())
 
 
@@ -316,6 +319,9 @@ def new_post_create(user: str) -> Response:
 
     if current_user.username != user or current_user.blog is None:  # type: ignore
         flask.abort(401)
+
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
 
     title: t.Optional[str] = flask.request.form.get("title")
     content: t.Optional[str] = flask.request.form.get("content")
@@ -355,7 +361,7 @@ def new_post_preview(user: str) -> str:
     blog: t.Optional[models.Blog] = current_user.blog  # type: ignore
 
     if blog is None:
-        flask.abort(400)
+        flask.abort(404)
 
     return flask.render_template(
         "blog_post.j2",
@@ -379,6 +385,9 @@ def style_blog(user: str) -> str:
     if current_user.username != user:  # type: ignore
         flask.abort(401)
 
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
+
     return flask.render_template(
         "blog_style.j2",
         c=util.jscaptcha(),
@@ -394,6 +403,9 @@ def style_blog_save(user: str) -> Response:
 
     if current_user.username != user:  # type: ignore
         flask.abort(401)
+
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
 
     try:
         current_user.blog.set_style(flask.request.form.get("css"))  # type: ignore
@@ -413,6 +425,9 @@ def preview_style_index(user: str) -> str:
 
     if current_user.username != user:  # type: ignore
         flask.abort(401)
+
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
 
     return flask.render_template(
         "blog.j2",
@@ -435,6 +450,9 @@ def preview_style_post(user: str) -> str:
 
     if current_user.username != user:  # type: ignore
         flask.abort(401)
+
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
 
     return flask.render_template(
         "blog_post.j2",
@@ -463,6 +481,9 @@ def nuke(user: str) -> str:
     if current_user.username != user:  # type: ignore
         flask.abort(401)
 
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
+
     flask.flash("you are about to delete your blog", "warning")
     return flask.render_template("delete.j2", c=util.jscaptcha())
 
@@ -476,10 +497,13 @@ def nuke_commit(user: str) -> Response:
     if current_user.username != user:  # type: ignore
         flask.abort(401)
 
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
+
     sure: t.Optional[str] = flask.request.form.get("sure")
     pin: t.Optional[str] = flask.request.form.get("pin")
 
-    if not (sure and current_user.blog and current_user.verify_pin(pin)):  # type: ignore
+    if not util.is_admin() and not (sure and current_user.blog and current_user.verify_pin(pin)):  # type: ignore
         flask.flash("blog not deleted", "info")
         return flask.redirect(flask.url_for("blog.index"))
 
@@ -500,6 +524,9 @@ def delete_post(user: str, slug: str) -> str:
     if current_user.username != user:  # type: ignore
         flask.abort(401)
 
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
+
     post: models.BlogPost = models.BlogPost.query.filter_by(
         username=user, slug=slug
     ).first_or_404()
@@ -517,10 +544,13 @@ def delete_post_commit(user: str, slug: str) -> Response:
     if current_user.username != user:  # type: ignore
         flask.abort(401)
 
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
+
     sure: t.Optional[str] = flask.request.form.get("sure")
     pin: t.Optional[str] = flask.request.form.get("pin")
 
-    if not (sure and current_user.blog and current_user.verify_pin(pin)):  # type: ignore
+    if not util.is_admin() and not (sure and current_user.blog and current_user.verify_pin(pin)):  # type: ignore
         flask.flash("blog not deleted", "info")
         return flask.redirect(flask.url_for("blog.index"))
 
@@ -541,6 +571,9 @@ def edit_post(user: str, slug: str) -> str:
     if current_user.username != user:  # type: ignore
         flask.abort(401)
 
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
+
     return flask.render_template(
         "blog_new.j2",
         c=util.jscaptcha(),
@@ -556,6 +589,9 @@ def edit_post_commit(user: str, slug: str) -> Response:
 
     if current_user.username != user:  # type: ignore
         flask.abort(401)
+
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
 
     title: t.Optional[str] = flask.request.form.get("title")
     content: t.Optional[str] = flask.request.form.get("content")
@@ -595,6 +631,9 @@ def edit_post_preview(user: str, slug: str) -> Response:
 
     if current_user.username != user:  # type: ignore
         flask.abort(401)
+
+    if current_user.blog is None:  # type: ignore
+        flask.abort(404)
 
     del slug
 

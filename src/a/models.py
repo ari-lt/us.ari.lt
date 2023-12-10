@@ -523,6 +523,19 @@ class Counter(db.Model):
 
         return self
 
+    def delete_counter(self) -> bool:
+        """delete counter"""
+
+        try:
+            db.session.delete(self)
+            db.session.commit()
+
+            return True
+        except Exception as e:
+            db.session.rollback()
+            flask.current_app.log_exception(e)
+            return False
+
 
 class App(db.Model):
     """user app"""

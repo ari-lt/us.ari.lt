@@ -173,9 +173,10 @@ def delete_counter_page(user: str, id: str) -> str:
 
     counter: models.Counter = models.Counter.query.filter_by(username=user, id=id).first_or_404()  # type: ignore
 
+    flask.flash(f"you are about to delete counter {counter.name!r}")
+
     return flask.render_template(
-        "counter_delete.j2",
-        counter=counter,
+        "delete.j2",
         c=util.jscaptcha(),
     )
 
@@ -186,17 +187,22 @@ def delete_counter_page(user: str, id: str) -> str:
 def delete_counter(user: str, id: str) -> Response:
     """delete counter"""
 
-    if user != current_user.username:  # type: ignore
+    if current_user.username != user:  # type: ignore
         flask.abort(401)
 
-    try:
-        models.db.session.delete(models.Counter.query.filter_by(username=user, id=id).first_or_404())  # type: ignore
-        models.db.session.commit()
-        flask.flash("deleted the counter")
-    except Exception as e:
-        models.db.session.rollback()
-        flask.current_app.log_exception(e)
-        flask.flash("failed to delete the counter")
+    counter: models.Counter = models.Counter.query.filter_by(username=user, id=id).first_or_404()  # type: ignore
+
+    sure: t.Optional[str] = flask.request.form.get("sure")
+    pin: t.Optional[str] = flask.request.form.get("pin")
+
+    if not util.is_admin() and not (sure and current_user.verify_pin(pin)):  # type: ignore
+        flask.flash("counter not deleted", "info")
+        return flask.redirect(flask.url_for("counter.delete_counter_page", user=user, id=id))
+
+    if not counter.delete_counter():  # type: ignore
+        flask.flash("failed to delete blog", "error")
         flask.abort(500)
+
+    flask.flash("counter deleted", "info")
 
     return flask.redirect(flask.url_for("counter.index"))
