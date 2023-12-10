@@ -15,10 +15,14 @@
 
 <p>role : {{ user.role.name }}</p>
 
-{% if apps %}
+{% if user.apps %}
 <h2>apps</h2>
-{% for app in apps %}
+{% for app in user.apps %}
 <li><a href="{{ app.id }}">{{ app.name | escape }}</a></li>
 {% endfor %}
+{% endif %}
+
+{% if user.blog %}
+<a href="{{ url_for("blog.user_blog", user=user.username) }}">blog : {{ user.blog.title | escape }} | {{ user.blog.header | escape }}</a>
 {% endif %}
 {% endblock %}

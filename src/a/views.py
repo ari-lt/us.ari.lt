@@ -55,12 +55,11 @@ def user(username: str) -> t.Union[str, t.Tuple[str, int]]:
     user: t.Optional[models.User] = models.db.session.get(models.User, username)
 
     if user is None:
-        return flask.render_template("404.j2"), 404
+        flask.abort(404)
 
     return flask.render_template(
         "user.j2",
         user=user,
-        apps=models.App.query.filter_by(username=username).all(),
     )
 
 
