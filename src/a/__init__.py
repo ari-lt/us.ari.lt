@@ -200,7 +200,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
 
     app.config[
         "SQLALCHEMY_DATABASE_URI"
-    ] = f"mysql+pymysql://{maria_user}:{maria_pass}@127.0.0.1/main"
+    ] = f"mysql+pymysql://{maria_user}:{maria_pass}@127.0.0.1/main?charset=utf8mb4"
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
