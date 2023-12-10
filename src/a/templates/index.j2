@@ -39,6 +39,9 @@ $ free -h
 $ lsblk -ifo 'NAME,FSTYPE,FSVER,FSAVAIL,FSUSE%'
 {{ lsblk | escape }}
 
+$ dbsize
+{{ db | escape }}
+
 $ cat /proc/loadavg
 {{ loadavg | escape }}
 

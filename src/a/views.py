@@ -7,6 +7,7 @@ import subprocess
 import typing as t
 
 import flask
+from sqlalchemy import text
 from werkzeug.wrappers import Response
 
 from . import models, util
@@ -25,6 +26,19 @@ def index() -> str:
     rx, tx, oc = util.get_network()
     cpu: int = os.cpu_count() or 1
 
+    try:
+        size: t.Optional[t.Tuple[str, float]] = models.db.session.execute(  # type: ignore
+            text(
+                "SELECT table_schema, \
+ROUND(SUM(data_length + index_length) / 1024 / 1024, 3) \
+FROM information_schema.tables \
+WHERE table_schema='main' \
+GROUP BY table_schema"
+            ),
+        ).first()
+    except Exception:
+        size = None
+
     return flask.render_template(
         "index.j2",
         users=models.User.query.all(),
@@ -34,6 +48,7 @@ def index() -> str:
         )
         .decode()
         .strip(),
+        db=f"{size[1] if size else 0} mb",
         loadavg=loadavg,
         cpu=f"{float(loadavg.split(maxsplit=1)[0]) / cpu * 100:.3f}% | {cpu} threads",
         net=f"rx {rx / 1024 / 1024:.3f} mb, tx {tx / 1024 / 1024:.3f} mb, open {oc}",
