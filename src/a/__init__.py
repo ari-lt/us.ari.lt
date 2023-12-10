@@ -7,10 +7,10 @@ import os
 import re
 import secrets
 import time
+import traceback
 from datetime import timedelta
 from functools import lru_cache
 from typing import Any, Dict, Optional, Tuple
-import traceback
 
 import flask
 import web_mini
@@ -201,7 +201,10 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     app.config[
         "SQLALCHEMY_DATABASE_URI"
     ] = f"mysql+pymysql://{maria_user}:{maria_pass}@127.0.0.1/main?charset=utf8mb4"
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "encoding": "utf8",
+    }
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     app.config["ARGON2_TIME_COST"] = 4
@@ -297,7 +300,8 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
                 "http.j2",
                 code=e.code,
                 summary=e.name.lower(),
-                description=(e.description or f"http error code {e.code}").lower() + str(traceback.format_exc()),
+                description=(e.description or f"http error code {e.code}").lower()
+                + str(traceback.format_exc()),
             ),
             e.code or 200,
         )
