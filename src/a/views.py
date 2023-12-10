@@ -7,7 +7,6 @@ import subprocess
 import typing as t
 
 import flask
-from sqlalchemy import text
 from werkzeug.wrappers import Response
 
 from . import models, util
@@ -35,6 +34,7 @@ def index() -> str:
         )
         .decode()
         .strip(),
+        db=subprocess.check_output(("dbsize",)).decode().strip(),
         loadavg=loadavg,
         cpu=f"{float(loadavg.split(maxsplit=1)[0]) / cpu * 100:.3f}% | {cpu} threads",
         net=f"rx {rx / 1024 / 1024:.3f} mb, tx {tx / 1024 / 1024:.3f} mb, open {oc}",
