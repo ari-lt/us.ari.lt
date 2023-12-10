@@ -28,17 +28,17 @@ def index() -> str:
     return flask.render_template(
         "index.j2",
         users=models.User.query.all(),
-        free=subprocess.check_output(("free", "-h")).decode().strip(),
+        free=subprocess.check_output(("/usr/bin/free", "-h")).decode().strip(),
         lsblk=subprocess.check_output(
-            ("lsblk", "-ifo", "NAME,FSTYPE,FSVER,FSAVAIL,FSUSE%")
+            ("/usr/bin/lsblk", "-ifo", "NAME,FSTYPE,FSVER,FSAVAIL,FSUSE%")
         )
         .decode()
         .strip(),
-        db=subprocess.check_output(("dbsize",)).decode().strip(),
+        db=subprocess.check_output(("/usr/bin/dbsize",)).decode().strip(),
         loadavg=loadavg,
         cpu=f"{float(loadavg.split(maxsplit=1)[0]) / cpu * 100:.3f}% | {cpu} threads",
         net=f"rx {rx / 1024 / 1024:.3f} mb, tx {tx / 1024 / 1024:.3f} mb, open {oc}",
-        date=subprocess.check_output(("date",)).decode().strip(),
+        date=subprocess.check_output(("/usr/bin/date",)).decode().strip(),
     )
 
 
