@@ -267,7 +267,7 @@ def delete_user() -> Response:
     sure: t.Optional[str] = flask.request.form.get("sure")
     pin: t.Optional[str] = flask.request.form.get("pin")
 
-    if not (sure and current_user.verify_pin(pin)):  # type: ignore
+    if not util.is_admin() and not (sure and current_user.verify_pin(pin)):  # type: ignore
         flask.flash("account not deleted", "info")
         return flask.redirect("/")
 

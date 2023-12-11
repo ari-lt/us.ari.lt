@@ -735,6 +735,10 @@ class User(UserMixin, db.Model):
             for counter in self.counters:  # type: ignore
                 db.session.delete(counter)  # type: ignore
 
+            if self.blog and not self.blog.delete_blog():
+                db.session.rollback()
+                return False
+
             db.session.delete(self)
             db.session.commit()
 
