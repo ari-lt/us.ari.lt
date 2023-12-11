@@ -22,6 +22,7 @@ from werkzeug.wrappers import Response
 
 from . import const, crypt, models, util
 from .util import is_admin, require_role
+from .md import get_code_style
 
 
 def random_cookie_salt() -> str:
@@ -176,7 +177,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     with open("admin.key", "rb") as fp:
         app.config["ADMIN_KEY"] = fp.read()
 
-    app.config["PREFERRED_URL_SCHEME"] = "https"
+    app.config["PREFERRED_URL_SCHEME"] = "http" if app.debug else "https"
     app.config["DOMAIN"] = "us.ari.lt"
 
     app.config["OWNER_USER"] = "ari"
@@ -207,6 +208,12 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     app.config["ARGON2_PARALLELISM"] = os.cpu_count() or 4
     app.config["ARGON2_SALT_LENGTH"] = const.ARGON2_SALT_LENGTH
     app.config["ARGON2_HASH_LENGTH"] = const.ARGON2_HASH_LENGTH
+
+    app.config["CACHE_TYPE"] = "MemcachedCache"
+
+    from . import cache
+
+    cache.blog.init_app(app)  # type: ignore
 
     from .models import User, argon2, db
 
@@ -258,12 +265,14 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
 
         # wher .update() ??11/!?@?/
 
-        response.headers[
-            "Strict-Transport-Security"
-        ] = "max-age=63072000; includeSubDomains; preload"
+        if not app.debug:
+            response.headers["Content-Security-Policy"] = "upgrade-insecure-requests"
+            response.headers[
+                "Strict-Transport-Security"
+            ] = "max-age=63072000; includeSubDomains; preload"
+
         response.headers["X-Frame-Options"] = "SAMEORIGIN"
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Content-Security-Policy"] = "upgrade-insecure-requests"
         response.headers["X-Permitted-Cross-Domain-Policies"] = "none"
 
         if response.direct_passthrough:
@@ -320,6 +329,7 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
         return {
             "require_role": require_role,
             "Role": const.Role,
+            "CodeTheme": const.CodeTheme,
             "pin_len": const.PIN_LEN,
             "name_len": const.NAME_LEN,
             "username_len": const.USERNAME_LEN,
@@ -340,6 +350,8 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
             "b64": b64,
             "blog_post_section_delim": const.BLOG_POST_SECTION_DELIM,
             "min_css": min_css,
+            "e2j": const.enum2json,
+            "get_code_style": get_code_style,
         }
 
     from .c import c

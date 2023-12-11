@@ -269,6 +269,11 @@ class Blog(db.Model):
         db.String(const.BLOG_POST_CONTENT_LEN),
         nullable=True,
     )
+    code_theme: const.CodeTheme = db.Column(
+        Enum(const.CodeTheme),
+        nullable=False,
+        default=const.CodeTheme.none,
+    )
     posts: Relationship[BlogPost] = relationship(
         "BlogPost",
         backref="blog",
@@ -288,6 +293,7 @@ class Blog(db.Model):
         locale: str,
         comment_url: t.Optional[str] = None,
         visitor_url: t.Optional[str] = None,
+        code_theme: const.CodeTheme = const.CodeTheme.none,
         style: t.Optional[str] = None,
     ) -> None:
         self.username: str = username
@@ -302,6 +308,7 @@ class Blog(db.Model):
         self.set_comment_url(comment_url)
         self.set_visitor_url(visitor_url)
         self.set_style(style)
+        self.set_code_theme(code_theme)
 
     def set_title(self, title: str) -> None:
         """set title"""
@@ -392,6 +399,15 @@ class Blog(db.Model):
             db.session.rollback()
             flask.current_app.log_exception(e)
             return False
+
+    def set_code_theme(self, code_theme: t.Union[str, const.CodeTheme]) -> None:
+        """set code theme"""
+
+        if type(code_theme) is str:
+            code_theme = const.CodeTheme(int(code_theme))
+
+        assert type(code_theme) is const.CodeTheme
+        self.code_theme: const.CodeTheme = code_theme
 
 
 class Counter(db.Model):
@@ -628,7 +644,9 @@ class User(UserMixin, db.Model):
     password_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
     pin_hash: str = db.Column(db.String(const.HASH_LEN), nullable=False)
     role: const.Role = db.Column(
-        Enum(const.Role), nullable=False, default=const.Role.user
+        Enum(const.Role),
+        nullable=False,
+        default=const.Role.user,
     )
     limited: bool = db.Column(db.Boolean, default=False)
     joined: DateTime = db.Column(

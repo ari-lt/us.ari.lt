@@ -48,7 +48,7 @@
         <div class="form-group">
             <label for="role">role</label>
             <select id="role" name="role">
-                {% for role, value in Role.json().items() if value < admin.role.value %}
+                {% for role, value in e2j(Role).items() if value < admin.role.value %}
                 <option value="{{ value }}" {{ "selected" if value == current_user.role.value else "" }}>{{ role }}</option>
                 {% endfor %}
             </select>

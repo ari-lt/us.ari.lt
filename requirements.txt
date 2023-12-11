@@ -14,3 +14,6 @@ unidecode
 mistune
 bleach
 readtime
+flask-caching
+pylibmc
+pygments

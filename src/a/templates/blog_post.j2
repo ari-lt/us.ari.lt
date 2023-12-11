@@ -33,6 +33,10 @@
 {% if style %}
 <style>@import url("data:text/css;base64,{{ b64(min_css(style)) }}")</style>
 {% endif %}
+
+{% if blog.code_theme != CodeTheme.none %}
+<style>{{ get_code_style(blog.code_theme) }}</style>
+{% endif%}
 {% endblock %}
 
 {% block body %}

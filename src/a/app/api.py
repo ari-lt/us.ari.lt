@@ -54,7 +54,7 @@ def app(user: str, id: str) -> flask.Response:
 @api.get("/roles")
 def roles() -> flask.Response:
     """returns roles"""
-    return flask.jsonify(const.Role.json())  # type: ignore
+    return flask.jsonify(const.enum2json(const.Role))  # type: ignore
 
 
 @api.get("/apps")

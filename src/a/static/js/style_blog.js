@@ -9,14 +9,34 @@ function main() {
     let preview_post = document.getElementById("preview-post");
     let preview_post_a = document.getElementById("preview-post-a");
 
-    css.oninput = debounce(() => {
-        preview_index.src = preview_index_a.href = `${window.location}/preview/index?style=${encodeURIComponent(css.value)}`;
-        preview_post.src = preview_post_a.href = `${window.location}/preview/post?style=${encodeURIComponent(css.value)}`;
-    }, 555);
+    let minimal = document.getElementById("minimal");
+
+    let data = new FormData();
+
+    css.oninput = minimal.oninput = debounce(() => {
+        data.set("style", css.value);
+
+        fetch(`${window.location}/preview` + (minimal.checked ? "?minimal" : ""), {
+            method: "POST",
+            body: data,
+        })
+            .then((r) => r.json())
+            .then((j) => {
+                preview_index.src =
+                    preview_index_a.href = `/blog/~preview?ctx=${j[0]}`;
+
+                preview_post.src =
+                    preview_post_a.href = `/blog/~preview?ctx=${j[1]}`;
+            })
+            .catch((e) => {
+                console.error(e);
+                alert(e);
+            });
+    }, 666);
 
     load_textarea_controls();
 
-    css.oninput()
+    css.oninput();
 }
 
 document.addEventListener("DOMContentLoaded", main);

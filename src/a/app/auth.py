@@ -16,7 +16,7 @@ from ..c import audio as gen_audio_captcha
 from ..c import c
 from ..routing import Bp
 
-auth: Bp = Bp("auth", __name__)
+auth: Bp = Bp("auth", __name__).set_api()
 
 
 def nologin(fn: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:

@@ -15,52 +15,61 @@
 
         <div class="form-group">
             <label for="title">title</label>
-            <input required type="text" maxlength="{{ blog_post_slug_len }}" id="title" minlength="1" name="title" placeholder="blog title" value="{{ current_user.blog.title | escape }}" />
+            <input required type="text" maxlength="{{ blog_post_slug_len }}" id="title" minlength="1" name="title" placeholder="blog title" value="{{ mblog.title | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="header">header</label>
-            <input required type="text" maxlength="{{ blog_post_slug_len }}" id="header" minlength="1" name="header" placeholder="blog header" value="{{ current_user.blog.header | escape }}" />
+            <input required type="text" maxlength="{{ blog_post_slug_len }}" id="header" minlength="1" name="header" placeholder="blog header" value="{{ mblog.header | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="description">description</label>
-            <input required type="text" maxlength="{{ blog_post_description_len }}" id="description" minlength="1" name="description" placeholder="blog description" value="{{ current_user.blog.description | escape }}" />
+            <input required type="text" maxlength="{{ blog_post_description_len }}" id="description" minlength="1" name="description" placeholder="blog description" value="{{ mblog.description | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="keywords">keywords ( sep by `,` )</label>
-            <input required type="text" maxlength="{{ blog_post_keywords_len }}" id="keywords" minlength="1" name="keywords" placeholder="blog keywords" value="{{ current_user.blog.keywords | escape }}" />
+            <input required type="text" maxlength="{{ blog_post_keywords_len }}" id="keywords" minlength="1" name="keywords" placeholder="blog keywords" value="{{ mblog.keywords | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="default_keywords">default keywords ( sep by `,` )</label>
-            <input required type="text" maxlength="{{ blog_post_keywords_len }}" id="default_keywords" minlength="1" name="default_keywords" placeholder="default blog post keywords" value="{{ current_user.blog.default_keywords | escape }}" />
+            <input required type="text" maxlength="{{ blog_post_keywords_len }}" id="default_keywords" minlength="1" name="default_keywords" placeholder="default blog post keywords" value="{{ mblog.default_keywords | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="primary">primary</label>
-            <input required type="text" maxlength="{{ blog_primary_len }}" id="primary" minlength="{{ blog_primary_len }}" name="primary" placeholder="primary hex colour of your blog" value="{{ current_user.blog.primary | escape }}" />
+            <input required type="text" maxlength="{{ blog_primary_len }}" id="primary" minlength="{{ blog_primary_len }}" name="primary" placeholder="primary hex colour of your blog" value="{{ mblog.primary | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="secondary">secondary</label>
-            <input required type="text" maxlength="{{ blog_secondary_len }}" id="secondary" minlength="{{ blog_secondary_len }}" name="secondary" placeholder="secondary hex colour of your blog" value="{{ current_user.blog.secondary | escape }}" />
+            <input required type="text" maxlength="{{ blog_secondary_len }}" id="secondary" minlength="{{ blog_secondary_len }}" name="secondary" placeholder="secondary hex colour of your blog" value="{{ mblog.secondary | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="locale">locale, <a href="https://saimana.com/list-of-country-locale-code/">list, only use the xx_XX ones</a></label>
-            <input required type="text" maxlength="{{ blog_locale_len }}" id="locale" minlength="{{ blog_locale_len }}" name="locale" placeholder="the locale of your blog" value="{{ current_user.blog.locale | escape }}" />
+            <input required type="text" maxlength="{{ blog_locale_len }}" id="locale" minlength="{{ blog_locale_len }}" name="locale" placeholder="the locale of your blog" value="{{ mblog.locale | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="visitor">visitor counter url</label>
-            <input type="text" maxlength="{{ blog_visitor_url_len }}" id="visitor" name="visitor" placeholder="the image to the visitor counter" value="{{ (current_user.blog.visitor_url or "") | escape }}" />
+            <input type="text" maxlength="{{ blog_visitor_url_len }}" id="visitor" name="visitor" placeholder="the image to the visitor counter" value="{{ (mblog.visitor_url or "") | escape }}" />
         </div>
 
         <div class="form-group">
             <label for="comment">comments url</label>
-            <input type="text" maxlength="{{ blog_comments_url_len }}" id="comment" name="comment" placeholder="the comments url" value="{{ (current_user.blog.comment_url or "") | escape }}" />
+            <input type="text" maxlength="{{ blog_comments_url_len }}" id="comment" name="comment" placeholder="the comments url" value="{{ (mblog.comment_url or "") | escape }}" />
+        </div>
+
+        <div class="form-group">
+            <label for="code_theme">code theme</label>
+            <select id="code_theme" name="code_theme">
+                {% for theme, value in e2j(CodeTheme).items() %}
+                <option value="{{ value }}" {{ "selected" if mblog and value == mblog.code_theme.value else "" }}>{{ theme }}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <div id=captcha class="captcha">

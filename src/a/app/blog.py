@@ -4,13 +4,14 @@
 
 import typing as t
 import xml.etree.ElementTree as etree
+from datetime import datetime
+from time import sleep
 
 import flask
 from flask_login import current_user  # type: ignore
 from werkzeug.wrappers import Response
-from datetime import datetime
 
-from .. import const, models, util
+from .. import cache, const, models, util
 from ..routing import Bp
 
 blog: Bp = Bp("blog", __name__)
@@ -20,7 +21,11 @@ blog: Bp = Bp("blog", __name__)
 @util.require_role_route(const.Role.user)
 def index() -> str:
     """blogging"""
-    return flask.render_template("blog_conf.j2", c=util.jscaptcha())
+    return flask.render_template(
+        "blog_conf.j2",
+        c=util.jscaptcha(),
+        mblog=current_user.blog,  # type: ignore
+    )
 
 
 @blog.post("/")
@@ -40,6 +45,7 @@ def blog_conf() -> str:
         "locale": flask.request.form.get("locale"),
         "visitor_url": flask.request.form.get("visitor"),
         "comment_url": flask.request.form.get("comment"),
+        "code_theme": flask.request.form.get("code_theme"),
     }
 
     if current_user.blog is None:  # type: ignore
@@ -274,6 +280,27 @@ def rss(user: str) -> Response:
     )
 
 
+@blog.get("/~preview")
+@blog.get("/~preview/")
+@util.require_role_route(const.Role.user)
+def preview() -> str:
+    """preview user's preview"""
+
+    if (
+        "ctx" in flask.request.args
+        and (
+            render := cache.blog_get(
+                current_user.username,  # type: ignore
+                flask.request.args["ctx"],  # type: ignore
+            )
+        )
+        is not None
+    ):
+        return render
+
+    flask.abort(404)
+
+
 @blog.get("/@<string:user>/<string:slug>")
 def show_post(user: str, slug: str) -> str:
     """show user's blog post"""
@@ -350,7 +377,7 @@ def new_post_create(user: str) -> Response:
     return flask.redirect(flask.url_for("blog.show_post", user=user, slug=post.slug))
 
 
-@blog.get("/@<string:user>/~new/preview")
+@blog.post("/@<string:user>/~new/preview")
 @util.require_role_route(const.Role.user)
 def new_post_preview(user: str) -> str:
     """show user's blog"""
@@ -363,18 +390,24 @@ def new_post_preview(user: str) -> str:
     if blog is None:
         flask.abort(404)
 
-    return flask.render_template(
-        "blog_post.j2",
-        blog=blog,
-        post=models.BlogPost(
-            flask.request.args.get("title") or "",
-            "",
-            flask.request.args.get("content") or "",
-            "",
-            current_user.username,  # type: ignore
+    cache.blog_set(
+        user,
+        "post",
+        flask.render_template(
+            "blog_post.j2",
+            blog=blog,
+            post=models.BlogPost(
+                flask.request.form.get("title") or "",
+                "",
+                flask.request.form.get("content") or "",
+                "",
+                current_user.username,  # type: ignore
+            ),
+            style=blog.style or "",  # type: ignore
         ),
-        style=blog.style or "",  # type: ignore
     )
+
+    return flask.jsonify(["post"])  # type: ignore
 
 
 @blog.get("/@<string:user>/~style")
@@ -391,7 +424,7 @@ def style_blog(user: str) -> str:
     return flask.render_template(
         "blog_style.j2",
         c=util.jscaptcha(),
-        style=current_user.blog.style,  # type: ignore
+        mblog=current_user.blog,  # type: ignore
     )
 
 
@@ -418,9 +451,9 @@ def style_blog_save(user: str) -> Response:
     return flask.redirect(flask.url_for("blog.style_blog", user=user))
 
 
-@blog.get("/@<string:user>/~style/preview/index")
+@blog.post("/@<string:user>/~style/preview")
 @util.require_role_route(const.Role.user)
-def preview_style_index(user: str) -> str:
+def preview_style_index(user: str) -> flask.Response:
     """preview style user's blog"""
 
     if current_user.username != user:  # type: ignore
@@ -429,48 +462,48 @@ def preview_style_index(user: str) -> str:
     if current_user.blog is None:  # type: ignore
         flask.abort(404)
 
-    return flask.render_template(
-        "blog.j2",
-        c=util.jscaptcha(),
-        style=(flask.request.args.get("style") or "").split(
-            const.BLOG_POST_SECTION_DELIM,
-            1,
-        )[0],
-        blog=current_user.blog,  # type: ignore
-        posts=models.BlogPost.query.filter_by(username=user)
-        .order_by(models.BlogPost.posted.desc())  # type: ignore
-        .all(),
-    )
-
-
-@blog.get("/@<string:user>/~style/preview/post")
-@util.require_role_route(const.Role.user)
-def preview_style_post(user: str) -> str:
-    """preview style user's post"""
-
-    if current_user.username != user:  # type: ignore
-        flask.abort(401)
-
-    if current_user.blog is None:  # type: ignore
-        flask.abort(404)
-
-    return flask.render_template(
-        "blog_post.j2",
-        c=util.jscaptcha(),
-        style=(flask.request.args.get("style") or "").replace(
-            const.BLOG_POST_SECTION_DELIM,
-            "",
-            1,
-        ),
-        blog=current_user.blog,  # type: ignore
-        post=models.BlogPost(
-            "title",
-            "",
-            const.EXAMPLE_MARKDOWN,
-            "",
-            current_user.username,  # type: ignore
+    cache.blog_set(
+        user,
+        "blog",
+        flask.render_template(
+            "blog.j2",
+            c=util.jscaptcha(),
+            style=(flask.request.form.get("style") or "").split(
+                const.BLOG_POST_SECTION_DELIM,
+                1,
+            )[0],
+            blog=current_user.blog,  # type: ignore
+            posts=models.BlogPost.query.filter_by(username=user)
+            .order_by(models.BlogPost.posted.desc())  # type: ignore
+            .all(),
         ),
     )
+
+    cache.blog_set(
+        user,
+        "post",
+        flask.render_template(
+            "blog_post.j2",
+            c=util.jscaptcha(),
+            style=(flask.request.form.get("style") or "").replace(
+                const.BLOG_POST_SECTION_DELIM,
+                "",
+                1,
+            ),
+            blog=current_user.blog,  # type: ignore
+            post=models.BlogPost(
+                "title",
+                "",
+                "minimal post content !\n\nhow are `you` ?"
+                if "minimal" in flask.request.args
+                else const.EXAMPLE_MARKDOWN,
+                "",
+                current_user.username,  # type: ignore
+            ),
+        ),
+    )
+
+    return flask.jsonify(["blog", "post"])  # type: ignore
 
 
 @blog.get("/@<string:user>/~nuke")
@@ -624,7 +657,7 @@ def edit_post_commit(user: str, slug: str) -> Response:
     return flask.redirect(flask.url_for("blog.show_post", user=user, slug=slug))
 
 
-@blog.get("/@<string:user>/<string:slug>/~edit/preview")
+@blog.post("/@<string:user>/<string:slug>/~edit/preview")
 @util.require_role_route(const.Role.user)
 def edit_post_preview(user: str, slug: str) -> Response:
     """edit post preview"""
@@ -637,10 +670,4 @@ def edit_post_preview(user: str, slug: str) -> Response:
 
     del slug
 
-    return flask.redirect(
-        flask.url_for(
-            "blog.new_post_preview",
-            user=user,
-            **flask.request.args,
-        ),
-    )
+    return new_post_preview(user)

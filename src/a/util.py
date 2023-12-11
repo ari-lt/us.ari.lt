@@ -57,7 +57,7 @@ def validate_username(username: str) -> bool:
 def require_role(role: const.Role, allow_limit: bool = True) -> bool:
     """require a role"""
 
-    if current_user.is_anonymous:  # type: ignore
+    if current_user.is_anonymous or not current_user.is_authenticated:  # type: ignore
         return False
 
     if (not allow_limit) and current_user.limited:  # type: ignore

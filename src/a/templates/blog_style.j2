@@ -21,7 +21,7 @@
         <div class="group">
             <div class="inside-group">
                 <h2>styles ( everything below `{{ blog_post_section_delim }}` will purely apply to posts )</h2>
-                <textarea required placeholder="... global css ...&NewLine;{{ blog_post_section_delim }}&NewLine;... post-only css ..." maxlength="{{ blog_post_content_len }}" name="css" id="css">{{ (style or "") | escape }}</textarea>
+                <textarea placeholder="... global css ...&NewLine;{{ blog_post_section_delim }}&NewLine;... post-only css ..." maxlength="{{ blog_post_content_len }}" name="css" id="css">{{ (mblog.style or "") | escape }}</textarea>
             </div>
 
             <div class="inside-group">
@@ -31,7 +31,7 @@
         </div>
 
         <div class="inside-group">
-            <h2><a href="/blank" id="preview-post-a" target="_blank">preview post</a></h2>
+            <h2><a href="/blank" id="preview-post-a" target="_blank">preview post</a> ( <label for="minimal">minimal content : </label><input type="checkbox" id="minimal" name="minimal" /> )</h2>
             <iframe id="preview-post" src="/blank"></iframe>
         </div>
 

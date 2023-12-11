@@ -3,7 +3,7 @@
 """constants"""
 
 from enum import Enum, auto
-from typing import Dict, Final, Tuple
+from typing import Dict, Final, List, Tuple
 
 PIN_LEN: Final[int] = 6
 ID_LEN: Final[int] = 64
@@ -37,50 +37,251 @@ BLOG_VISITOR_URL_LEN: Final[int] = 196
 
 BLOG_POST_MAX: Final[int] = 1024
 
-EXAMPLE_MARKDOWN: Final[str] = f"""
-# hello world
+MARKDOWN_EXTS: Final[List[str]] = [
+    "speedup",
+    "strikethrough",
+    "mark",
+    "insert",
+    "superscript",
+    "subscript",
+    "footnotes",
+    "table",
+    "url",
+    "abbr",
+    "def_list",
+    "ruby",
+    "task_lists",
+    "spoiler",
+]
 
-this is my markdown :)
 
-<#:hello world> is the top of the page
+EXAMPLE_MARKDOWN: Final[
+    str
+] = f"""
+{'markdown test ' * 20}
 
-    my
-    code
-    int main(void) {{
-        puts("hello world !");
-        return 0;
-    }}
+{'markdowntest' * 20}
 
-- list
-- two list
-- three list
+link : [i am a link](https://ari.lt/)
 
-1. one
-2. two
-3. three
+image : ![i am an image](https://ari.lt/favicon.ico)
 
-~~strike~~
+link + image : [![i am an image](https://ari.lt/favicon.ico)](https://ari.lt/)
 
-`code` is my beloved :)
-
-> quoting quotes
-> quoting quotes
-> aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-
-{'longword' * 20}
-
-{'long text ' * 20}
+---
+## headers
 
 # h1 ( h2 )
-## h2
-### h3
-#### h4
-##### h5
-###### h6
+# h2
+# h3
+# h4
+# h5
+# h6
+---
 
-epic stuff
+## Text Styles
 
-*italic* **bold** ***bold italic***
+**bold text**
+
+*italic text*
+
+***bold italic***
+
+~~{'strikethrough'}~~
+
+`{'inline code ' * 10}`
+
+---
+
+## lists
+
+* unordered list item 1
+    * nested unordered list item 1
+    * nested unordered list item 2
+* {'unordered list item 2 ' * 10}
+
+1. ordered list item 1
+    1. nested ordered list item 1
+    2. nested ordered list item 2
+2. {'ordered list item 2 ' * 10}
+
+---
+
+## blockquotes
+
+> this is a block quote
+> this is more quoting
+> even more !!
+
+---
+
+## code blocks
+
+lang :
+
+diff :
+```diff
+--- main.cpp    2020-09-20 19:49:29.000000000 +0100
++++ main.cpp    2020-09-20 19:51:39.000000000 +0100
+@@ -1,9 +1,7 @@
+ #include <iostream>
+
+ int main() {{
+-    // This comment will be deleted in the next version of the code.
+-    std::cout << "Hello world!\n";
++    std::cout << "Welcome to my program!\n";
+     return 0;
+ }}
+```
+
+```hfiuhwuifwe
+hewiuhfwe uifheiuhf we
+ughfeiwuh
+```
+
+cpp :
+
+```cpp
+/* epic code */
+// epic code
+
+#ifndef _EPIC_HPP
+#define _EPIC_HPP
+#include <iostream>
+#include <vector>
+#include <string>
+
+template <typename T> T add(T a, T b) {{ return a + b; }}
+
+class MyClass {{
+    int value;
+
+  public:
+    MyClass(int v) : value(v) {{}}
+
+    int get_value() const {{ return value; }}
+
+    friend std::ostream &operator<<(std::ostream &os, const MyClass &obj) {{
+        os << "MyClass with value " << obj.get_value();
+        return os;
+    }}
+}};
+
+int main(void) {{
+    std::cout << "sum of integers : " << add<int>(5, 2) << '\\n';
+    std::cout << "sum of floats : " << add<float>(5.6f, 2.3f) << '\\n';
+
+    std::string str = "hello, world !";
+    std::cout << str << '\\n';
+
+    MyClass obj1(7);
+    std::cout << obj1 << '\\n';
+
+    std::vector<MyClass> vec;
+    vec.push_back(obj1);
+    vec.push_back(MyClass(13));
+
+    std::cout << "vector content :\\n";
+
+    for (const MyClass &obj : vec)
+        std::cout << " - " << obj << '\\n';
+
+    return 0;
+}}
+#endif /* _EPIC_HPP */
+```
+
+no lang :
+
+```
+const hello = "hello";
+if (hello)
+    console.log(foo); // prints 'hello'
+```
+
+intended :
+
+    const hello = "hello";
+    if (hello)
+        console.log(foo); // prints 'hello'
+
+---
+
+## tables
+
+| column 1      | column 2 | column 3 |
+| :------------ | :------: | -------: |
+| cell          | cell     | cell     |
+| cell          | cell     | cell     |
+| cell          | cell     | cell     |
+| {'cell' * 20} | cell     | cell     |
+
+---
+
+## checkbox
+
+- [ ] unchecked
+- [x] checked
+
+---
+
+## footnotes
+
+here is a footnote[^1]
+
+have another one[^here]
+
+---
+
+## superscript and subscript
+
+hello~world~
+
+hello^world^
+
+---
+
+## inserts
+
+^^insert me^^
+
+---
+
+## abbrs
+
+this will become HTML !
+
+*[HTML]: hypertext markup language
+
+---
+
+## spoiler
+
+>! here is the spoiler content
+>!
+>! it will be hidden
+
+---
+
+## mark
+
+i think ==i am marking this== /shrug
+
+---
+
+## definitions
+
+first term
+: first definition
+: second definition
+
+second term
+: third definition
+
+---
+
+[^1]: this is my footnote
+[^here]: here it is !
 """.strip()
 
 BLOG_POST_SECTION_DELIM: Final[str] = "!!!section:[post]:"
@@ -123,6 +324,11 @@ CONTEXT_WORDS: Tuple[str, ...] = (
 )
 
 
+def enum2json(enum: Enum) -> Dict[str, int]:
+    """enum to json"""
+    return {v.name: v.value for v in enum}  # type: ignore
+
+
 class Role(Enum):
     """user roles
 
@@ -139,14 +345,52 @@ class Role(Enum):
     admin = auto()
     owner = auto()
 
-    @classmethod
-    def json(cls) -> Dict[str, int]:
-        """roles as json"""
 
-        return {
-            "user": cls.user.value,
-            "trusted": cls.trusted.value,
-            "mod": cls.mod.value,
-            "admin": cls.admin.value,
-            "owner": cls.owner.value,
-        }
+class CodeTheme(Enum):
+    none = auto()
+    abap = auto()
+    algol = auto()
+    algol_nu = auto()
+    arduino = auto()
+    autumn = auto()
+    borland = auto()
+    bw = auto()
+    coffee = auto()
+    colorful = auto()
+    default = auto()
+    dracula = auto()
+    emacs = auto()
+    friendly = auto()
+    friendly_grayscale = auto()
+    fruity = auto()
+    gh_dark = auto()
+    gruvbox = auto()
+    igor = auto()
+    inkpot = auto()
+    lightbulb = auto()
+    lilypond = auto()
+    lovelace = auto()
+    manni = auto()
+    material = auto()
+    monokai = auto()
+    murphy = auto()
+    native = auto()
+    nord = auto()
+    onedark = auto()
+    paraiso_dark = auto()
+    paraiso_light = auto()
+    pastie = auto()
+    perldoc = auto()
+    rainbow_dash = auto()
+    rrt = auto()
+    sas = auto()
+    solarized = auto()
+    staroffice = auto()
+    stata_dark = auto()
+    stata_light = auto()
+    tango = auto()
+    trac = auto()
+    vim = auto()
+    vs = auto()
+    xcode = auto()
+    zenburn = auto()
