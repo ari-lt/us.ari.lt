@@ -158,7 +158,7 @@ def markdown(md: str) -> str:
 def get_code_style(style: CodeTheme) -> str:
     """get code style"""
 
-    if style == CodeTheme.none:
+    if not style or style == CodeTheme.none:
         return ""
 
     return minify_css(
