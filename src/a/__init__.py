@@ -241,7 +241,16 @@ def create_app(maria_user: str, maria_pass: str) -> flask.Flask:
     @app.before_request
     @limit.limit("")
     def _() -> None:
-        """limit all requests"""
+        """limit all requests and upgrade urls"""
+
+        if app.debug or app.config["PREFERRED_URL_SCHEME"] != "https":
+            return
+
+        try:
+            if flask.request.url[:7] == "http://":
+                flask.request.url = f"https://{flask.request.url[7:]}"
+        except Exception:
+            pass
 
     @app.after_request
     def _(response: flask.Response) -> flask.Response:

@@ -244,7 +244,7 @@ def rss(user: str) -> Response:
     channel: etree.Element = etree.SubElement(root, "channel")
 
     etree.SubElement(channel, "title").text = blog.title
-    etree.SubElement(channel, "link").text = flask.request.url[:-4]
+    etree.SubElement(channel, "link").text = flask.request.url[:-8]
     etree.SubElement(channel, "description").text = blog.description
     etree.SubElement(channel, "generator").text = "ari-web user accounts and services"
     etree.SubElement(channel, "language").text = blog.locale.lower().replace("_", "-")
@@ -254,7 +254,7 @@ def rss(user: str) -> Response:
 
     for post in posts:
         item: etree.Element = etree.SubElement(channel, "item")
-        link: str = f"{flask.request.url[:-4]}/{post.slug}"
+        link: str = f"{flask.request.url[:-8]}/{post.slug}"
 
         etree.SubElement(item, "title").text = post.title
         etree.SubElement(item, "link").text = link
