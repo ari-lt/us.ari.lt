@@ -356,17 +356,19 @@ class Blog(db.Model):
     def set_visitor_url(self, visitor_url: t.Optional[str]) -> None:
         """set visitor url"""
 
-        assert len(visitor_url or "") <= const.BLOG_VISITOR_URL_LEN
-        if visitor_url is not None:
-            assert visitor_url[:4] == "http"
+        if visitor_url:
+            assert len(visitor_url) <= const.BLOG_VISITOR_URL_LEN
+            assert visitor_url[:8] == "https://" or visitor_url[:7] == "http://"
+
         self.visitor_url: t.Optional[str] = visitor_url
 
     def set_comment_url(self, comment_url: t.Optional[str]) -> None:
         """set comment url"""
 
-        assert len(comment_url or "") <= const.BLOG_COMMENT_URL_LEN
-        if comment_url is not None:
-            assert comment_url[:4] == "http"
+        if comment_url:
+            assert len(comment_url) <= const.BLOG_COMMENT_URL_LEN
+            assert comment_url[:8] == "https://" or comment_url[:7] == "http://"
+
         self.comment_url: t.Optional[str] = comment_url
 
     def set_style(self, style: t.Optional[str]) -> None:
