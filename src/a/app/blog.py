@@ -31,7 +31,7 @@ def index() -> str:
 @blog.post("/")
 @util.captcha
 @util.require_role_route(const.Role.user)
-def blog_conf() -> str:
+def blog_conf() -> Response:
     """blogging"""
 
     conf: t.Dict[str, t.Optional[str]] = {
@@ -78,7 +78,7 @@ def blog_conf() -> str:
         flask.flash("failed updating the blog", "error")
         flask.abort(500)
 
-    return flask.render_template("blog_conf.j2", c=util.jscaptcha())
+    return flask.redirect(flask.url_for("blog.index"))
 
 
 @blog.get("/@<string:user>")
