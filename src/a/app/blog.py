@@ -270,7 +270,7 @@ def rss(user: str) -> Response:
             encoding="UTF-8",
             xml_declaration=True,
         ),
-        mimetype="application/xml",
+        mimetype="application/xml+rss",
     )
 
 
