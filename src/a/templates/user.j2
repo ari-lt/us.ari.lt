@@ -7,6 +7,15 @@
 {% block body %}
 <h1>user {{ user.username | escape }}</h1>
 
+{% if user.username == "nsa" %}
+<h2>number of skill issues</h2>
+{{ 42 + (range(0, 6969) | random) }}
+{% endif %}
+
+{% if user.username == "jsteel2" %}
+<h2>warning : this user is epic</h2>
+{% endif %}
+
 {% if user.bio %}
 <pre class="bio">{{ user.bio | escape }}</pre>
 {% endif %}
