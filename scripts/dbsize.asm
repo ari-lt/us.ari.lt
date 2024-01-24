@@ -7,7 +7,7 @@ _start:
     mov eax, SYS_execve
     mov edi, arg0
     mov esi, argv
-    mov edx, 0
+    xor edx, edx
     syscall
 
 segment readable
