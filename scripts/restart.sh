@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 main() {
-    pkill -f python
+    [ "$1" ] && pkill -f python
     pkill -f dendrite
 
     systemctl restart nginx
