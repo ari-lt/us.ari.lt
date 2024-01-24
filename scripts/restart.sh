@@ -1,13 +1,16 @@
 #!/usr/bin/env sh
 
-set -e
-
 main() {
+    pkill -f python
     pkill -f dendrite
+
     systemctl restart nginx
     systemctl restart forgejo
-    su matrix -c 'cd ~/dendrite/ && ~/go/bin/dendrite --config dendrite.yaml >/dev/null 2>/dev/null & disown'
+
+    su matrix -c 'cd ~/dendrite/ && ~/go/bin/dendrite --config dendrite.yaml & disown'
+    su mau -c 'cd ~/maubot/ && source ./bin/activate && python3 -m maubot & disown'
+    su us -c 'cd ~/us.ari.lt/ && source maria.env && source ./venv/bin/activate && ./scripts/run.sh & disown'
+    su voe -c 'cd ~/vim-or-emacs.ari.lt/ && source ./venv/bin/activate && ./scripts/run.sh & disown'
 }
 
-main "$@"
-
+main
