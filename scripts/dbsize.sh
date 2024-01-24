@@ -8,13 +8,12 @@ main() {
         exit 1
     fi
 
-    cc scripts/dbsize.c -s -Ofast -o dbsize
-    strip dbsize
+    fasm scripts/dbsize.asm dbsize
+    chmod 700 dbsize
     chown root:root dbsize
     install -o root -Dm4111 ./dbsize /usr/bin/dbsize
 
     rm -f dbsize
 }
 
-main "$@"
-
+main
